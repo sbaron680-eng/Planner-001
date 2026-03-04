@@ -19,8 +19,8 @@ SITE_NAME = "Planner 001"
 [[d1_databases]]
 binding = "DB"
 database_name = "planner-db"
-database_id = "YOUR_D1_DATABASE_ID"
+database_id = "d74e0d6a-ba47-4c25-988f-9ff8a831ed7f"
 
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "YOUR_KV_NAMESPACE_ID"
+id = "859a873f551c49e393f8cc52188864f5"
