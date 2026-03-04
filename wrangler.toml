@@ -1,11 +1,16 @@
+# This file is for LOCAL DEVELOPMENT only (wrangler pages dev).
+# Production config is in the Cloudflare Dashboard.
+#
+# Dashboard 설정 (Pages > planner-001 > Settings):
+#   Build command: npm run build
+#   Build output directory: dist
+#   Environment variables: SITE_URL, SITE_NAME, ANTHROPIC_API_KEY, JWT_SECRET
+#   D1 database binding: DB -> planner-db
+#   KV namespace binding: SESSIONS
+#   Cron trigger: 0 15 31 10 * (Nov 1 KST)
+
 name = "planner-001"
 compatibility_date = "2024-01-01"
-pages_build_output_dir = "dist"
-
-# Note: Build command is configured in the Cloudflare Dashboard
-# (Pages > planner-001 > Settings > Build configuration)
-# Build command: npm run build
-# Install command: npm install
 
 [vars]
 SITE_URL = "https://planner-001.pages.dev"
@@ -19,7 +24,3 @@ database_id = "YOUR_D1_DATABASE_ID"
 [[kv_namespaces]]
 binding = "SESSIONS"
 id = "YOUR_KV_NAMESPACE_ID"
-
-# Note: Cron triggers are configured in the Cloudflare Dashboard
-# (Workers & Pages > planner-001 > Settings > Triggers)
-# Cron: "0 15 31 10 *" = Nov 1 00:00 KST (Oct 31 15:00 UTC)
