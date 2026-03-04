@@ -1,13 +1,13 @@
 import { PDFDocument, rgb, StandardFonts, type PDFPage, type PDFFont } from 'pdf-lib';
 import fontkit from '@pdf-lib/fontkit';
 import {
-  format, getDaysInMonth, getDay, startOfWeek, endOfWeek,
+  format, getDaysInMonth, getDay, endOfWeek,
   eachWeekOfInterval, startOfYear, endOfYear,
 } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { getHolidays } from '@/lib/holidays';
 import { getTemplate, toF } from './templates';
-import type { PDFGenerateRequest, Holiday } from '@/types';
+import type { PDFGenerateRequest } from '@/types';
 
 // ============================================================
 // 한글 폰트 URL (Noto Sans KR - Google Fonts CDN)
@@ -20,6 +20,30 @@ const PAGE_W = 841.89;
 const PAGE_H = 595.28;
 const MARGIN = 40;
 const INNER_W = PAGE_W - MARGIN * 2;
+
+// ── 루프 불변 상수 ────────────────────────────────────────
+const DOW_KR = ['일', '월', '화', '수', '목', '금', '토'];
+const DAY_COL_W = INNER_W / 7;          // 월별 cW == 주간 dW
+const CAL_GRID_TOP = PAGE_H - 80;       // 월별 달력 그리드 상단
+const CAL_CELL_H = Math.min(80, Math.floor((PAGE_H - 80 - 22 - 90) / 6)); // 동적 셀 높이
+const WEEK_COL_H = PAGE_H - 120 - 50;  // 주간 컬럼 높이
+
+// ── 텍스트 줄바꿈 헬퍼 (slice 기반, O(n) 문자 연결 제거) ──
+function splitText(text: string, maxChars: number): string[] {
+  const lines: string[] = [];
+  let i = 0;
+  while (i < text.length) {
+    const nl = text.indexOf('\n', i);
+    if (nl !== -1 && nl - i < maxChars) {
+      lines.push(text.slice(i, nl));
+      i = nl + 1;
+    } else {
+      lines.push(text.slice(i, i + maxChars));
+      i += maxChars;
+    }
+  }
+  return lines;
+}
 
 // ── 헬퍼: 한글 호환 텍스트 그리기 ────────────────────────
 function drawText(
@@ -74,12 +98,16 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
   const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
 
-  // ── 폰트 로드 ────────────────────────────────────────
+  // ── 폰트 로드 (5초 타임아웃) ─────────────────────────
   let fontKr: PDFFont | null = null;
   try {
-    const fontRes = await fetch(NOTO_SANS_KR_URL);
-    if (fontRes.ok) {
-      const fontBytes = await fontRes.arrayBuffer();
+    const fetchWithTimeout = Promise.race([
+      fetch(NOTO_SANS_KR_URL),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('font timeout')), 5000)),
+    ]);
+    const fontRes = await fetchWithTimeout;
+    if ((fontRes as Response).ok) {
+      const fontBytes = await (fontRes as Response).arrayBuffer();
       fontKr = await pdfDoc.embedFont(fontBytes);
     }
   } catch {
@@ -89,20 +117,21 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
   const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
   const font = fontKr ?? fontBase;
 
-  const pC  = rgb(...toF(C.primary));
-  const sC  = rgb(...toF(C.secondary));
-  const bgC = rgb(...toF(C.bg));
-  const txtC = rgb(...toF(C.text));
-  const mutedC = rgb(...toF(C.muted));
-  const borderC = rgb(...toF(C.border));
-  const accentC = rgb(...toF(C.accent));
+  // ── 색상 상수 ─────────────────────────────────────────
+  const pC       = rgb(...toF(C.primary));
+  const bgC      = rgb(...toF(C.bg));
+  const txtC     = rgb(...toF(C.text));
+  const mutedC   = rgb(...toF(C.muted));
+  const borderC  = rgb(...toF(C.border));
+  const accentC  = rgb(...toF(C.accent));
+  const borderFillC = borderC; // border 배경으로 재사용 (rgb(...toF(C.border)) inline 제거)
 
   // ── 파스텔 요일 색상 ────────────────────────────────
   // 토요일: 파스텔 블루 / 일요일·공휴일: 파스텔 레드
-  const satText    = rgb(0.25, 0.44, 0.78); // 파스텔 블루 텍스트
-  const satBg      = rgb(0.86, 0.91, 0.98); // 파스텔 블루 배경
-  const sunHolText = rgb(0.78, 0.22, 0.22); // 파스텔 레드 텍스트
-  const sunHolBg   = rgb(0.99, 0.87, 0.87); // 파스텔 레드 배경
+  const satText    = rgb(0.25, 0.44, 0.78);
+  const satBg      = rgb(0.86, 0.91, 0.98);
+  const sunHolText = rgb(0.78, 0.22, 0.22);
+  const sunHolBg   = rgb(0.99, 0.87, 0.87);
 
   // 페이지 참조 추적 (하이퍼링크용)
   const pageRefs: { label: string; pageIndex: number }[] = [];
@@ -116,17 +145,14 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
   }
 
   // ── 1. 표지 ──────────────────────────────────────────
-  // 가로형: 상단 45%가 PRIMARY 색상, 하단 55%가 배경색
   pageRefs.push({ label: '표지', pageIndex: 0 });
   const cover = addPage();
   rect(cover, 0, PAGE_H * 0.55, PAGE_W, PAGE_H * 0.45, { color: pC });
-  // 상단 컬러 영역: bgC(밝은) 텍스트
   drawText(cover, `${year}`, MARGIN, PAGE_H - 90, { size: 64, color: bgC, font: fontBold });
   drawText(cover, 'PLANNER', MARGIN, PAGE_H - 125, { size: 26, color: bgC, font: fontBold });
   if (user_name) {
-    drawText(cover, user_name, MARGIN, PAGE_H - 150, { size: 13, color: rgb(...toF(C.bg)), font });
+    drawText(cover, user_name, MARGIN, PAGE_H - 150, { size: 13, color: bgC, font });
   }
-  // 하단 흰 영역: pC(어두운) 텍스트
   drawText(cover, `${year}년도 연간 플래너`, MARGIN, 165, { size: 20, color: pC, font });
   drawText(cover, '· PDF 내부 하이퍼링크 내비게이션', MARGIN, 140, { size: 11, color: txtC, font });
   drawText(cover, '· 공휴일 자동 표시', MARGIN, 122, { size: 11, color: txtC, font });
@@ -146,20 +172,18 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
     const row = Math.floor(m / 4);
     const mx = MARGIN + col * colW;
     const my = PAGE_H - 95 - row * rowH;
+    const d1 = new Date(year, m, 1);
 
-    const monthName = format(new Date(year, m, 1), 'M월', { locale: ko });
-    drawText(yearPage, monthName, mx + 4, my, { size: 11, color: pC, font: fontBold });
+    drawText(yearPage, format(d1, 'M월', { locale: ko }), mx + 4, my, { size: 11, color: pC, font: fontBold });
     line(yearPage, mx, my - 6, mx + colW - 8, 0.5, borderC);
 
-    // 미니 캘린더
-    const dow = ['일', '월', '화', '수', '목', '금', '토'];
     for (let d = 0; d < 7; d++) {
-      drawText(yearPage, dow[d], mx + d * 14 + 2, my - 18,
+      drawText(yearPage, DOW_KR[d], mx + d * 14 + 2, my - 18,
         { size: 7, color: d === 0 ? sunHolText : d === 6 ? satText : mutedC, font });
     }
 
-    const firstDay = getDay(new Date(year, m, 1));
-    const daysInMonth = getDaysInMonth(new Date(year, m, 1));
+    const firstDay = getDay(d1);
+    const daysInMonth = getDaysInMonth(d1);
     for (let d = 1; d <= daysInMonth; d++) {
       const pos = firstDay + d - 1;
       const dc = pos % 7;
@@ -169,16 +193,14 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
       const isSun = dc === 0;
       const isSat = dc === 6;
       const textColor = isHol || isSun ? sunHolText : isSat ? satText : txtC;
-      drawText(yearPage, String(d), mx + dc * 14 + 2, my - 32 - dr * 12,
-        { size: 7, color: textColor, font });
+      drawText(yearPage, String(d), mx + dc * 14 + 2, my - 32 - dr * 12, { size: 7, color: textColor, font });
     }
   }
 
   // ── 3. 월별 페이지 × 12 ──────────────────────────────
-  // 가로형: 헤더 80px, 요일행 22px, 6주 × cH, 메모 영역
-  const monthPageStart = pages.length;
   for (let m = 0; m < 12; m++) {
-    const monthLabel = format(new Date(year, m, 1), 'M월', { locale: ko });
+    const d1 = new Date(year, m, 1);
+    const monthLabel = format(d1, 'M월', { locale: ko });
     pageRefs.push({ label: monthLabel, pageIndex: pages.length });
     const pg = addPage();
 
@@ -186,52 +208,46 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
     rect(pg, 0, PAGE_H - 80, PAGE_W, 80, { color: pC });
     drawText(pg, `${year}년 ${monthLabel}`, MARGIN, PAGE_H - 52, { size: 22, color: bgC, font: fontBold });
 
-    // 달력 그리드 (가로형 최적화: cH를 동적 계산)
-    const DOW = ['일', '월', '화', '수', '목', '금', '토'];
-    const cW = INNER_W / 7;
-    const gridTop = PAGE_H - 80;
-    const cH = Math.min(80, Math.floor((PAGE_H - 80 - 22 - 90) / 6));
-
+    // 요일 헤더 행
     for (let d = 0; d < 7; d++) {
-      const x = MARGIN + d * cW;
-      rect(pg, x, gridTop - 22, cW, 22, {
-        color: d === 0 ? sunHolBg : d === 6 ? satBg : rgb(...toF(C.border)),
+      const x = MARGIN + d * DAY_COL_W;
+      rect(pg, x, CAL_GRID_TOP - 22, DAY_COL_W, 22, {
+        color: d === 0 ? sunHolBg : d === 6 ? satBg : borderFillC,
       });
-      drawText(pg, DOW[d], x + cW / 2 - 5, gridTop - 16,
+      drawText(pg, DOW_KR[d], x + DAY_COL_W / 2 - 5, CAL_GRID_TOP - 16,
         { size: 10, color: d === 0 ? sunHolText : d === 6 ? satText : txtC, font: fontBold });
     }
 
-    const firstDay = getDay(new Date(year, m, 1));
-    const daysInMonth = getDaysInMonth(new Date(year, m, 1));
+    const firstDay = getDay(d1);
+    const daysInMonth = getDaysInMonth(d1);
     for (let d = 1; d <= daysInMonth; d++) {
       const pos = firstDay + d - 1;
       const dc = pos % 7;
       const dr = Math.floor(pos / 7);
-      const x = MARGIN + dc * cW;
-      const y = gridTop - 22 - (dr + 1) * cH;
+      const x = MARGIN + dc * DAY_COL_W;
+      const y = CAL_GRID_TOP - 22 - (dr + 1) * CAL_CELL_H;
       const dateStr = `${year}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       const hol = holidayMap.get(dateStr);
-
-      rect(pg, x, y, cW, cH, { borderColor: borderC, borderWidth: 0.5 });
-
       const isSun = dc === 0;
       const isSat = dc === 6;
       const textColor = hol || isSun ? sunHolText : isSat ? satText : txtC;
 
+      rect(pg, x, y, DAY_COL_W, CAL_CELL_H, { borderColor: borderC, borderWidth: 0.5 });
+
       if (hol || isSun || isSat) {
-        rect(pg, x, y + cH - 20, cW, 20, {
-          color: hol ? sunHolBg : isSun ? sunHolBg : satBg,
+        rect(pg, x, y + CAL_CELL_H - 20, DAY_COL_W, 20, {
+          color: hol || isSun ? sunHolBg : satBg,
         });
       }
 
-      drawText(pg, String(d), x + 5, y + cH - 15, { size: 11, color: textColor, font: fontBold });
+      drawText(pg, String(d), x + 5, y + CAL_CELL_H - 15, { size: 11, color: textColor, font: fontBold });
       if (hol) {
-        drawText(pg, hol.name.slice(0, 6), x + 2, y + cH - 28, { size: 7, color: sunHolText, font });
+        drawText(pg, hol.name.slice(0, 6), x + 2, y + CAL_CELL_H - 28, { size: 7, color: sunHolText, font });
       }
     }
 
     // 메모 영역 (공간이 있을 때만 표시)
-    const notesY = gridTop - 22 - 6 * cH - 12;
+    const notesY = CAL_GRID_TOP - 22 - 6 * CAL_CELL_H - 12;
     if (notesY > MARGIN + 25) {
       line(pg, MARGIN, notesY, PAGE_W - MARGIN, 0.5, borderC);
       drawText(pg, '메모', MARGIN, notesY - 13, { size: 10, color: mutedC, font: fontBold });
@@ -249,7 +265,6 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
     { weekStartsOn: 0 }
   );
 
-  const weekPageStart = pages.length;
   weeks.forEach((weekStart, idx) => {
     const weekEnd = endOfWeek(weekStart, { weekStartsOn: 0 });
     const label = `${format(weekStart, 'M/d')}주`;
@@ -262,42 +277,37 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
       MARGIN, PAGE_H - 68, { size: 10, color: mutedC, font });
     line(pg, MARGIN, PAGE_H - 76, PAGE_W - MARGIN, 0.8, pC);
 
-    const days = ['일', '월', '화', '수', '목', '금', '토'];
-    const dW = INNER_W / 7;
-    const dayColH = PAGE_H - 120 - 50;
-
     for (let d = 0; d < 7; d++) {
       const dayDate = new Date(weekStart);
       dayDate.setDate(weekStart.getDate() + d);
       const dateStr = format(dayDate, 'yyyy-MM-dd');
       const hol = holidayMap.get(dateStr);
-      const x = MARGIN + d * dW;
+      const x = MARGIN + d * DAY_COL_W;
       const y = 50;
       const isSun = d === 0;
       const isSat = d === 6;
 
-      rect(pg, x, y, dW, dayColH, { borderColor: borderC, borderWidth: 0.5 });
+      rect(pg, x, y, DAY_COL_W, WEEK_COL_H, { borderColor: borderC, borderWidth: 0.5 });
 
-      const hdBg = hol ? sunHolBg : isSun ? sunHolBg : isSat ? satBg : rgb(...toF(C.border));
-      rect(pg, x, y + dayColH - 30, dW, 30, { color: hdBg });
+      const hdBg = hol || isSun ? sunHolBg : isSat ? satBg : borderFillC;
+      rect(pg, x, y + WEEK_COL_H - 30, DAY_COL_W, 30, { color: hdBg });
 
       const dc = hol || isSun ? sunHolText : isSat ? satText : txtC;
-      drawText(pg, days[d], x + 6, y + dayColH - 20, { size: 10, color: dc, font: fontBold });
-      drawText(pg, String(dayDate.getDate()), x + 6, y + dayColH - 33, { size: 9, color: mutedC, font });
+      drawText(pg, DOW_KR[d], x + 6, y + WEEK_COL_H - 20, { size: 10, color: dc, font: fontBold });
+      drawText(pg, String(dayDate.getDate()), x + 6, y + WEEK_COL_H - 33, { size: 9, color: mutedC, font });
       if (hol) {
-        drawText(pg, hol.name.slice(0, 4), x + 2, y + dayColH - 44, { size: 7, color: sunHolText, font });
+        drawText(pg, hol.name.slice(0, 4), x + 2, y + WEEK_COL_H - 44, { size: 7, color: sunHolText, font });
       }
 
       // 시간 라인 06-22
       for (let h = 6; h <= 22; h++) {
-        const hy = y + dayColH - 30 - (h - 5) * 20;
+        const hy = y + WEEK_COL_H - 30 - (h - 5) * 20;
         if (hy < y + 5) break;
-        line(pg, x + 2, hy, x + dW - 2, 0.2, borderC);
+        line(pg, x + 2, hy, x + DAY_COL_W - 2, 0.2, borderC);
         if (h % 2 === 0) drawText(pg, String(h), x + 2, hy + 2, { size: 6, color: mutedC, font });
       }
     }
 
-    // 주간 목표
     drawText(pg, '이번 주 목표 / 메모', MARGIN, 42, { size: 10, color: mutedC, font: fontBold });
     line(pg, MARGIN, 36, PAGE_W - MARGIN, 0.5, borderC);
   });
@@ -308,7 +318,7 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
     const fPg = addPage();
     rect(fPg, 0, PAGE_H - 120, PAGE_W, 120, { color: pC });
     drawText(fPg, '나의 운세', MARGIN, PAGE_H - 55, { size: 22, color: bgC, font: fontBold });
-    drawText(fPg, `${year}년도 운세 분석`, MARGIN, PAGE_H - 80, { size: 13, color: rgb(...toF(C.bg)), font });
+    drawText(fPg, `${year}년도 운세 분석`, MARGIN, PAGE_H - 80, { size: 13, color: bgC, font });
 
     const summaryLines = splitText(fortune.summary ?? '', 90);
     summaryLines.forEach((ln, i) => {
@@ -339,7 +349,7 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
         const y = PAGE_H - 90 - row * 100;
 
         rect(mfPg, x, y - 80, mfColW, 85, { borderColor: borderC, borderWidth: 0.5 });
-        rect(mfPg, x, y - 18, mfColW, 23, { color: rgb(...toF(C.border)) });
+        rect(mfPg, x, y - 18, mfColW, 23, { color: borderFillC });
         drawText(mfPg, `${mf.month}월`, x + 6, y - 12, { size: 12, color: pC, font: fontBold });
         drawText(mfPg, `점수: ${mf.score}/10`, x + 46, y - 12, { size: 10, color: mutedC, font });
 
@@ -355,16 +365,16 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
   pageRefs.push({ label: '습관 트래커', pageIndex: pages.length });
   for (let m = 0; m < 12; m++) {
     const pg = addPage();
-    const monthName = format(new Date(year, m, 1), 'M월', { locale: ko });
+    const d1 = new Date(year, m, 1);
+    const monthName = format(d1, 'M월', { locale: ko });
     drawText(pg, `${monthName} 습관 트래커`, MARGIN, PAGE_H - 50, { size: 18, color: pC, font: fontBold });
     line(pg, MARGIN, PAGE_H - 60, PAGE_W - MARGIN, 0.8, pC);
 
-    const daysInMonth = getDaysInMonth(new Date(year, m, 1));
-    const rows = 8; // 습관 항목 수
+    const daysInMonth = getDaysInMonth(d1);
+    const rows = 8;
     const cellW = INNER_W / (daysInMonth + 1);
     const cellH = 28;
 
-    // 날짜 헤더
     drawText(pg, '습관', MARGIN, PAGE_H - 80, { size: 9, color: mutedC, font: fontBold });
     for (let d = 1; d <= daysInMonth; d++) {
       const dateStr = `${year}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
@@ -399,7 +409,7 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
     const gy = PAGE_H - 105 - row * 170;
 
     rect(goalPg, gx, gy - 150, gColW, 155, { borderColor: borderC, borderWidth: 0.7 });
-    rect(goalPg, gx, gy - 20, gColW, 25, { color: rgb(...toF(C.border)) });
+    rect(goalPg, gx, gy - 20, gColW, 25, { color: borderFillC });
     drawText(goalPg, q, gx + 8, gy - 12, { size: 12, color: pC, font: fontBold });
     for (let j = 0; j < 5; j++) {
       const ly = gy - 45 - j * 25;
@@ -430,7 +440,7 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
   const colWs = [40, 120, 120, 120, 120];
   let tx = MARGIN;
   headers.forEach((h, hi) => {
-    rect(budgetPg, tx, PAGE_H - 103, colWs[hi], 22, { color: rgb(...toF(C.border)) });
+    rect(budgetPg, tx, PAGE_H - 103, colWs[hi], 22, { color: borderFillC });
     drawText(budgetPg, h, tx + 5, PAGE_H - 98, { size: 10, color: pC, font: fontBold });
     tx += colWs[hi];
   });
@@ -445,19 +455,4 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
   }
 
   return await pdfDoc.save();
-}
-
-// 텍스트 줄바꿈 헬퍼
-function splitText(text: string, maxChars: number): string[] {
-  const lines: string[] = [];
-  let current = '';
-  for (const char of text) {
-    current += char;
-    if (current.length >= maxChars || char === '\n') {
-      lines.push(current.replace('\n', ''));
-      current = '';
-    }
-  }
-  if (current) lines.push(current);
-  return lines;
 }
