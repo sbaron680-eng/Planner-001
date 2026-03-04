@@ -2,8 +2,10 @@ name = "planner-001"
 compatibility_date = "2024-01-01"
 pages_build_output_dir = "dist"
 
-[build]
-command = "npm install && npm run build"
+# Note: Build command is configured in the Cloudflare Dashboard
+# (Pages > planner-001 > Settings > Build configuration)
+# Build command: npm run build
+# Install command: npm install
 
 [vars]
 SITE_URL = "https://planner-001.pages.dev"
