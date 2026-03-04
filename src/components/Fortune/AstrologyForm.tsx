@@ -8,6 +8,9 @@ const ZODIAC_SIGNS = [
   '사수자리', '염소자리', '물병자리', '물고기자리',
 ];
 
+const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+
 interface Props {
   onResult: (result: FortuneResult) => void;
 }
@@ -22,6 +25,19 @@ export default function AstrologyForm({ onResult }: Props) {
     zodiac: '',
     year: currentYear,
   });
+  const [birthYear, setBirthYear] = useState('');
+  const [birthMonth, setBirthMonth] = useState('');
+  const [birthDay, setBirthDay] = useState('');
+
+  const handleBirthChange = (y: string, m: string, d: string) => {
+    if (y.length === 4 && m && d) {
+      const mm = m.padStart(2, '0');
+      const dd = d.padStart(2, '0');
+      setForm((prev) => ({ ...prev, birth_date: `${y}-${mm}-${dd}` }));
+    } else {
+      setForm((prev) => ({ ...prev, birth_date: '' }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,27 +61,59 @@ export default function AstrologyForm({ onResult }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">이름</label>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">이름</label>
+        <input
+          type="text"
+          required
+          value={form.name}
+          onChange={(e) => setForm({ ...form, name: e.target.value })}
+          placeholder="홍길동"
+          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">생년월일</label>
+        <div className="grid grid-cols-3 gap-2">
           <input
-            type="text"
+            type="number"
             required
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="홍길동"
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+            min={1900}
+            max={currentYear}
+            placeholder="년 (4자리)"
+            value={birthYear}
+            onChange={(e) => {
+              const v = e.target.value.slice(0, 4);
+              setBirthYear(v);
+              handleBirthChange(v, birthMonth, birthDay);
+            }}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
           />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">생년월일</label>
-          <input
-            type="date"
+          <select
             required
-            value={form.birth_date}
-            onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
-          />
+            value={birthMonth}
+            onChange={(e) => {
+              setBirthMonth(e.target.value);
+              handleBirthChange(birthYear, e.target.value, birthDay);
+            }}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+          >
+            <option value="">월</option>
+            {MONTHS.map((m) => <option key={m} value={String(m)}>{m}월</option>)}
+          </select>
+          <select
+            required
+            value={birthDay}
+            onChange={(e) => {
+              setBirthDay(e.target.value);
+              handleBirthChange(birthYear, birthMonth, e.target.value);
+            }}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 outline-none"
+          >
+            <option value="">일</option>
+            {DAYS.map((d) => <option key={d} value={String(d)}>{d}일</option>)}
+          </select>
         </div>
       </div>
 

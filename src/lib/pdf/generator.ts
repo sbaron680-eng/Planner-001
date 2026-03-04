@@ -15,9 +15,9 @@ import type { PDFGenerateRequest, Holiday } from '@/types';
 const NOTO_SANS_KR_URL =
   'https://cdn.jsdelivr.net/gh/nicowillis/fonts@main/NotoSansKR-Regular.otf';
 
-// A4 포트레이트 (iPad/갤럭시 탭 최적화 - PDF 표준)
-const PAGE_W = 595.28;
-const PAGE_H = 841.89;
+// A4 가로 (Landscape) - 플래너 최적화
+const PAGE_W = 841.89;
+const PAGE_H = 595.28;
 const MARGIN = 40;
 const INNER_W = PAGE_W - MARGIN * 2;
 
@@ -97,6 +97,13 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
   const borderC = rgb(...toF(C.border));
   const accentC = rgb(...toF(C.accent));
 
+  // ── 파스텔 요일 색상 ────────────────────────────────
+  // 토요일: 파스텔 블루 / 일요일·공휴일: 파스텔 레드
+  const satText    = rgb(0.25, 0.44, 0.78); // 파스텔 블루 텍스트
+  const satBg      = rgb(0.86, 0.91, 0.98); // 파스텔 블루 배경
+  const sunHolText = rgb(0.78, 0.22, 0.22); // 파스텔 레드 텍스트
+  const sunHolBg   = rgb(0.99, 0.87, 0.87); // 파스텔 레드 배경
+
   // 페이지 참조 추적 (하이퍼링크용)
   const pageRefs: { label: string; pageIndex: number }[] = [];
   const pages: PDFPage[] = [];
@@ -109,19 +116,22 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
   }
 
   // ── 1. 표지 ──────────────────────────────────────────
+  // 가로형: 상단 45%가 PRIMARY 색상, 하단 55%가 배경색
   pageRefs.push({ label: '표지', pageIndex: 0 });
   const cover = addPage();
   rect(cover, 0, PAGE_H * 0.55, PAGE_W, PAGE_H * 0.45, { color: pC });
-  drawText(cover, `${year}`, MARGIN, PAGE_H - 100, { size: 72, color: pC, font: fontBold });
-  drawText(cover, 'PLANNER', MARGIN, PAGE_H - 140, { size: 28, color: pC, font: fontBold });
+  // 상단 컬러 영역: bgC(밝은) 텍스트
+  drawText(cover, `${year}`, MARGIN, PAGE_H - 90, { size: 64, color: bgC, font: fontBold });
+  drawText(cover, 'PLANNER', MARGIN, PAGE_H - 125, { size: 26, color: bgC, font: fontBold });
   if (user_name) {
-    drawText(cover, user_name, MARGIN, PAGE_H - 170, { size: 14, color: mutedC, font });
+    drawText(cover, user_name, MARGIN, PAGE_H - 150, { size: 13, color: rgb(...toF(C.bg)), font });
   }
-  drawText(cover, `${year}년도 연간 플래너`, MARGIN, 180, { size: 22, color: bgC, font });
-  drawText(cover, '· PDF 내부 하이퍼링크 내비게이션', MARGIN, 155, { size: 11, color: rgb(...toF(C.bg)), font });
-  drawText(cover, '· 공휴일 자동 표시', MARGIN, 138, { size: 11, color: rgb(...toF(C.bg)), font });
-  drawText(cover, '· 월별 / 주간 / 일별 계획 완비', MARGIN, 121, { size: 11, color: rgb(...toF(C.bg)), font });
-  drawText(cover, 'planner-001.pages.dev', MARGIN, 60, { size: 10, color: rgb(...toF(C.muted)), font });
+  // 하단 흰 영역: pC(어두운) 텍스트
+  drawText(cover, `${year}년도 연간 플래너`, MARGIN, 165, { size: 20, color: pC, font });
+  drawText(cover, '· PDF 내부 하이퍼링크 내비게이션', MARGIN, 140, { size: 11, color: txtC, font });
+  drawText(cover, '· 공휴일 자동 표시', MARGIN, 122, { size: 11, color: txtC, font });
+  drawText(cover, '· 월별 / 주간 / 일별 계획 완비', MARGIN, 104, { size: 11, color: txtC, font });
+  drawText(cover, 'planner-001.pages.dev', MARGIN, 55, { size: 10, color: mutedC, font });
 
   // ── 2. 연간 개요 (Year at a Glance) ─────────────────
   pageRefs.push({ label: '연간 개요', pageIndex: 1 });
@@ -145,12 +155,11 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
     const dow = ['일', '월', '화', '수', '목', '금', '토'];
     for (let d = 0; d < 7; d++) {
       drawText(yearPage, dow[d], mx + d * 14 + 2, my - 18,
-        { size: 7, color: d === 0 ? rgb(0.85, 0.2, 0.2) : d === 6 ? rgb(0.2, 0.4, 0.85) : mutedC, font });
+        { size: 7, color: d === 0 ? sunHolText : d === 6 ? satText : mutedC, font });
     }
 
     const firstDay = getDay(new Date(year, m, 1));
     const daysInMonth = getDaysInMonth(new Date(year, m, 1));
-    let dayRow = 0;
     for (let d = 1; d <= daysInMonth; d++) {
       const pos = firstDay + d - 1;
       const dc = pos % 7;
@@ -159,13 +168,14 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
       const isHol = holidayMap.has(dateStr);
       const isSun = dc === 0;
       const isSat = dc === 6;
-      const textColor = isHol || isSun ? rgb(0.85, 0.2, 0.2) : isSat ? rgb(0.2, 0.4, 0.85) : txtC;
+      const textColor = isHol || isSun ? sunHolText : isSat ? satText : txtC;
       drawText(yearPage, String(d), mx + dc * 14 + 2, my - 32 - dr * 12,
         { size: 7, color: textColor, font });
     }
   }
 
   // ── 3. 월별 페이지 × 12 ──────────────────────────────
+  // 가로형: 헤더 80px, 요일행 22px, 6주 × cH, 메모 영역
   const monthPageStart = pages.length;
   for (let m = 0; m < 12; m++) {
     const monthLabel = format(new Date(year, m, 1), 'M월', { locale: ko });
@@ -176,19 +186,19 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
     rect(pg, 0, PAGE_H - 80, PAGE_W, 80, { color: pC });
     drawText(pg, `${year}년 ${monthLabel}`, MARGIN, PAGE_H - 52, { size: 22, color: bgC, font: fontBold });
 
-    // 달력 그리드
+    // 달력 그리드 (가로형 최적화: cH를 동적 계산)
     const DOW = ['일', '월', '화', '수', '목', '금', '토'];
     const cW = INNER_W / 7;
-    const cH = 85;
-    const gridTop = PAGE_H - 100;
+    const gridTop = PAGE_H - 80;
+    const cH = Math.min(80, Math.floor((PAGE_H - 80 - 22 - 90) / 6));
 
     for (let d = 0; d < 7; d++) {
       const x = MARGIN + d * cW;
       rect(pg, x, gridTop - 22, cW, 22, {
-        color: d === 0 ? rgb(1, 0.93, 0.93) : d === 6 ? rgb(0.93, 0.95, 1) : rgb(...toF(C.border)),
+        color: d === 0 ? sunHolBg : d === 6 ? satBg : rgb(...toF(C.border)),
       });
       drawText(pg, DOW[d], x + cW / 2 - 5, gridTop - 16,
-        { size: 10, color: d === 0 ? rgb(0.85, 0.2, 0.2) : d === 6 ? rgb(0.2, 0.4, 0.85) : txtC, font: fontBold });
+        { size: 10, color: d === 0 ? sunHolText : d === 6 ? satText : txtC, font: fontBold });
     }
 
     const firstDay = getDay(new Date(year, m, 1));
@@ -206,26 +216,30 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
 
       const isSun = dc === 0;
       const isSat = dc === 6;
-      const textColor = hol || isSun ? rgb(0.85, 0.2, 0.2) : isSat ? rgb(0.2, 0.4, 0.85) : txtC;
+      const textColor = hol || isSun ? sunHolText : isSat ? satText : txtC;
 
       if (hol || isSun || isSat) {
-        rect(pg, x, y + cH - 22, cW, 22, {
-          color: hol ? rgb(1, 0.92, 0.92) : isSun ? rgb(1, 0.96, 0.96) : rgb(0.96, 0.97, 1),
+        rect(pg, x, y + cH - 20, cW, 20, {
+          color: hol ? sunHolBg : isSun ? sunHolBg : satBg,
         });
       }
 
-      drawText(pg, String(d), x + 5, y + cH - 17, { size: 11, color: textColor, font: fontBold });
+      drawText(pg, String(d), x + 5, y + cH - 15, { size: 11, color: textColor, font: fontBold });
       if (hol) {
-        drawText(pg, hol.name.slice(0, 6), x + 2, y + cH - 30, { size: 7, color: rgb(0.85, 0.2, 0.2), font });
+        drawText(pg, hol.name.slice(0, 6), x + 2, y + cH - 28, { size: 7, color: sunHolText, font });
       }
     }
 
-    // 메모 영역
-    const notesY = gridTop - 22 - 6 * cH - 15;
-    line(pg, MARGIN, notesY, PAGE_W - MARGIN, 0.5, borderC);
-    drawText(pg, '메모', MARGIN, notesY - 18, { size: 11, color: mutedC, font: fontBold });
-    for (let i = 0; i < 4; i++) {
-      line(pg, MARGIN, notesY - 35 - i * 18, PAGE_W - MARGIN, 0.3, borderC);
+    // 메모 영역 (공간이 있을 때만 표시)
+    const notesY = gridTop - 22 - 6 * cH - 12;
+    if (notesY > MARGIN + 25) {
+      line(pg, MARGIN, notesY, PAGE_W - MARGIN, 0.5, borderC);
+      drawText(pg, '메모', MARGIN, notesY - 13, { size: 10, color: mutedC, font: fontBold });
+      for (let i = 0; i < 4; i++) {
+        const ly = notesY - 30 - i * 18;
+        if (ly < MARGIN) break;
+        line(pg, MARGIN, ly, PAGE_W - MARGIN, 0.3, borderC);
+      }
     }
   }
 
@@ -250,7 +264,7 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
 
     const days = ['일', '월', '화', '수', '목', '금', '토'];
     const dW = INNER_W / 7;
-    const dH = (PAGE_H - 120 - 50) / 1;
+    const dayColH = PAGE_H - 120 - 50;
 
     for (let d = 0; d < 7; d++) {
       const dayDate = new Date(weekStart);
@@ -262,21 +276,21 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
       const isSun = d === 0;
       const isSat = d === 6;
 
-      rect(pg, x, y, dW, PAGE_H - 120 - 50, { borderColor: borderC, borderWidth: 0.5 });
+      rect(pg, x, y, dW, dayColH, { borderColor: borderC, borderWidth: 0.5 });
 
-      const hdBg = hol ? rgb(1, 0.93, 0.93) : isSun ? rgb(1, 0.96, 0.96) : isSat ? rgb(0.96, 0.97, 1) : rgb(...toF(C.border));
-      rect(pg, x, y + PAGE_H - 120 - 50 - 30, dW, 30, { color: hdBg });
+      const hdBg = hol ? sunHolBg : isSun ? sunHolBg : isSat ? satBg : rgb(...toF(C.border));
+      rect(pg, x, y + dayColH - 30, dW, 30, { color: hdBg });
 
-      const dc = hol || isSun ? rgb(0.85, 0.2, 0.2) : isSat ? rgb(0.2, 0.4, 0.85) : txtC;
-      drawText(pg, days[d], x + 6, y + PAGE_H - 120 - 50 - 20, { size: 10, color: dc, font: fontBold });
-      drawText(pg, String(dayDate.getDate()), x + 6, y + PAGE_H - 120 - 50 - 33, { size: 9, color: mutedC, font });
+      const dc = hol || isSun ? sunHolText : isSat ? satText : txtC;
+      drawText(pg, days[d], x + 6, y + dayColH - 20, { size: 10, color: dc, font: fontBold });
+      drawText(pg, String(dayDate.getDate()), x + 6, y + dayColH - 33, { size: 9, color: mutedC, font });
       if (hol) {
-        drawText(pg, hol.name.slice(0, 4), x + 2, y + PAGE_H - 120 - 50 - 44, { size: 7, color: rgb(0.85, 0.2, 0.2), font });
+        drawText(pg, hol.name.slice(0, 4), x + 2, y + dayColH - 44, { size: 7, color: sunHolText, font });
       }
 
       // 시간 라인 06-22
       for (let h = 6; h <= 22; h++) {
-        const hy = y + PAGE_H - 120 - 50 - 30 - (h - 5) * 22;
+        const hy = y + dayColH - 30 - (h - 5) * 20;
         if (hy < y + 5) break;
         line(pg, x + 2, hy, x + dW - 2, 0.2, borderC);
         if (h % 2 === 0) drawText(pg, String(h), x + 2, hy + 2, { size: 6, color: mutedC, font });
@@ -296,7 +310,7 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
     drawText(fPg, '나의 운세', MARGIN, PAGE_H - 55, { size: 22, color: bgC, font: fontBold });
     drawText(fPg, `${year}년도 운세 분석`, MARGIN, PAGE_H - 80, { size: 13, color: rgb(...toF(C.bg)), font });
 
-    const summaryLines = splitText(fortune.summary ?? '', 70);
+    const summaryLines = splitText(fortune.summary ?? '', 90);
     summaryLines.forEach((ln, i) => {
       drawText(fPg, ln, MARGIN, PAGE_H - 145 - i * 18, { size: 11, color: txtC, font });
     });
@@ -310,27 +324,28 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
         { size: 11, color: accentC, font });
     }
 
-    // 월별 운세
+    // 월별 운세 (가로형: 3열 4행 레이아웃)
     if (fortune.monthly_fortunes?.length) {
       pageRefs.push({ label: '월별 운세', pageIndex: pages.length });
       const mfPg = addPage();
       drawText(mfPg, '월별 운세', MARGIN, PAGE_H - 55, { size: 20, color: pC, font: fontBold });
       line(mfPg, MARGIN, PAGE_H - 65, PAGE_W - MARGIN, 1, borderC);
 
+      const mfColW = (INNER_W - 10) / 3;
       fortune.monthly_fortunes.slice(0, 12).forEach((mf, i) => {
-        const col = i % 2;
-        const row = Math.floor(i / 2);
-        const x = MARGIN + col * (INNER_W / 2 + 10);
-        const y = PAGE_H - 90 - row * 110;
+        const col = i % 3;
+        const row = Math.floor(i / 3);
+        const x = MARGIN + col * (mfColW + 5);
+        const y = PAGE_H - 90 - row * 100;
 
-        rect(mfPg, x, y - 90, INNER_W / 2 - 5, 95, { borderColor: borderC, borderWidth: 0.5 });
-        rect(mfPg, x, y - 18, INNER_W / 2 - 5, 23, { color: rgb(...toF(C.border)) });
+        rect(mfPg, x, y - 80, mfColW, 85, { borderColor: borderC, borderWidth: 0.5 });
+        rect(mfPg, x, y - 18, mfColW, 23, { color: rgb(...toF(C.border)) });
         drawText(mfPg, `${mf.month}월`, x + 6, y - 12, { size: 12, color: pC, font: fontBold });
-        drawText(mfPg, `운세 점수: ${mf.score}/10`, x + 60, y - 12, { size: 10, color: mutedC, font });
+        drawText(mfPg, `점수: ${mf.score}/10`, x + 46, y - 12, { size: 10, color: mutedC, font });
 
-        const fLines = splitText(mf.fortune, 32);
+        const fLines = splitText(mf.fortune, 28);
         fLines.slice(0, 3).forEach((ln, li) => {
-          drawText(mfPg, ln, x + 6, y - 35 - li * 16, { size: 9, color: txtC, font });
+          drawText(mfPg, ln, x + 6, y - 35 - li * 15, { size: 9, color: txtC, font });
         });
       });
     }
@@ -356,7 +371,7 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
       const hol = holidayMap.get(dateStr);
       const dow = getDay(new Date(year, m, d));
       const isSun = dow === 0;
-      const tc = hol || isSun ? rgb(0.85, 0.2, 0.2) : dow === 6 ? rgb(0.2, 0.4, 0.85) : mutedC;
+      const tc = hol || isSun ? sunHolText : dow === 6 ? satText : mutedC;
       drawText(pg, String(d), MARGIN + cellW * d, PAGE_H - 80, { size: 8, color: tc, font });
     }
 
@@ -369,22 +384,27 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
     }
   }
 
-  // ── 7. 목표 관리 ─────────────────────────────────────
+  // ── 7. 목표 관리 (가로형: 2열 2행 레이아웃) ──────────
   pageRefs.push({ label: '목표 관리', pageIndex: pages.length });
   const goalPg = addPage();
   rect(goalPg, 0, PAGE_H - 80, PAGE_W, 80, { color: pC });
   drawText(goalPg, `${year}년 목표 관리`, MARGIN, PAGE_H - 52, { size: 20, color: bgC, font: fontBold });
 
+  const gColW = (INNER_W - 10) / 2;
   const qNames = ['1분기', '2분기', '3분기', '4분기'];
   qNames.forEach((q, i) => {
-    const y = PAGE_H - 105 - i * 170;
-    rect(goalPg, MARGIN, y - 150, INNER_W, 155, { borderColor: borderC, borderWidth: 0.7 });
-    rect(goalPg, MARGIN, y - 20, INNER_W, 25, { color: rgb(...toF(C.border)) });
-    drawText(goalPg, q, MARGIN + 8, y - 12, { size: 12, color: pC, font: fontBold });
+    const col = i % 2;
+    const row = Math.floor(i / 2);
+    const gx = MARGIN + col * (gColW + 10);
+    const gy = PAGE_H - 105 - row * 170;
+
+    rect(goalPg, gx, gy - 150, gColW, 155, { borderColor: borderC, borderWidth: 0.7 });
+    rect(goalPg, gx, gy - 20, gColW, 25, { color: rgb(...toF(C.border)) });
+    drawText(goalPg, q, gx + 8, gy - 12, { size: 12, color: pC, font: fontBold });
     for (let j = 0; j < 5; j++) {
-      const ly = y - 45 - j * 25;
-      drawText(goalPg, `${j + 1}.`, MARGIN + 8, ly + 5, { size: 11, color: mutedC, font });
-      line(goalPg, MARGIN + 22, ly, PAGE_W - MARGIN - 10, 0.4, borderC);
+      const ly = gy - 45 - j * 25;
+      drawText(goalPg, `${j + 1}.`, gx + 8, ly + 5, { size: 11, color: mutedC, font });
+      line(goalPg, gx + 22, ly, gx + gColW - 5, 0.4, borderC);
     }
   });
 
@@ -394,8 +414,8 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
     const pg = addPage();
     drawText(pg, 'MEMO', MARGIN, PAGE_H - 55, { size: 28, color: pC, font: fontBold });
     line(pg, MARGIN, PAGE_H - 68, PAGE_W - MARGIN, 1, pC);
-    for (let l = 0; l < 30; l++) {
-      line(pg, MARGIN, PAGE_H - 90 - l * 24, PAGE_W - MARGIN, 0.4, borderC);
+    for (let l = 0; l < 22; l++) {
+      line(pg, MARGIN, PAGE_H - 90 - l * 22, PAGE_W - MARGIN, 0.4, borderC);
     }
     drawText(pg, String(i + 1), PAGE_W - MARGIN - 10, 40, { size: 10, color: mutedC, font });
   }
@@ -407,7 +427,7 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
   drawText(budgetPg, `${year}년 가계부`, MARGIN, PAGE_H - 52, { size: 20, color: bgC, font: fontBold });
 
   const headers = ['월', '수입', '지출', '저축', '합계'];
-  const colWs = [40, 100, 100, 100, 100];
+  const colWs = [40, 120, 120, 120, 120];
   let tx = MARGIN;
   headers.forEach((h, hi) => {
     rect(budgetPg, tx, PAGE_H - 103, colWs[hi], 22, { color: rgb(...toF(C.border)) });
@@ -423,12 +443,6 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
     });
     drawText(budgetPg, `${m + 1}월`, MARGIN + 5, by + 7, { size: 10, color: txtC, font });
   }
-
-  // ── 10. 내비게이션 (목차) 페이지 ─────────────────────
-  // 내비게이션은 PDF에 링크 주석으로 추가
-  // 표지 다음 페이지로 삽입
-  // 이미 추가된 페이지에 링크 주석 삽입
-  // (pdf-lib의 addLinkAnnotation은 page.node.set으로 직접 구현)
 
   return await pdfDoc.save();
 }

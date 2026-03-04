@@ -6,6 +6,9 @@ interface Props {
   onResult: (result: FortuneResult) => void;
 }
 
+const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
+const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+
 export default function SajuForm({ onResult }: Props) {
   const currentYear = new Date().getFullYear();
   const [loading, setLoading] = useState(false);
@@ -17,6 +20,19 @@ export default function SajuForm({ onResult }: Props) {
     gender: 'female',
     year: currentYear,
   });
+  const [birthYear, setBirthYear] = useState('');
+  const [birthMonth, setBirthMonth] = useState('');
+  const [birthDay, setBirthDay] = useState('');
+
+  const handleBirthChange = (y: string, m: string, d: string) => {
+    if (y.length === 4 && m && d) {
+      const mm = m.padStart(2, '0');
+      const dd = d.padStart(2, '0');
+      setForm((prev) => ({ ...prev, birth_date: `${y}-${mm}-${dd}` }));
+    } else {
+      setForm((prev) => ({ ...prev, birth_date: '' }));
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,17 +81,51 @@ export default function SajuForm({ onResult }: Props) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1.5">생년월일</label>
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1.5">생년월일</label>
+        <div className="grid grid-cols-3 gap-2">
           <input
-            type="date"
+            type="number"
             required
-            value={form.birth_date}
-            onChange={(e) => setForm({ ...form, birth_date: e.target.value })}
-            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+            min={1900}
+            max={currentYear}
+            placeholder="년 (4자리)"
+            value={birthYear}
+            onChange={(e) => {
+              const v = e.target.value.slice(0, 4);
+              setBirthYear(v);
+              handleBirthChange(v, birthMonth, birthDay);
+            }}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
           />
+          <select
+            required
+            value={birthMonth}
+            onChange={(e) => {
+              setBirthMonth(e.target.value);
+              handleBirthChange(birthYear, e.target.value, birthDay);
+            }}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+          >
+            <option value="">월</option>
+            {MONTHS.map((m) => <option key={m} value={String(m)}>{m}월</option>)}
+          </select>
+          <select
+            required
+            value={birthDay}
+            onChange={(e) => {
+              setBirthDay(e.target.value);
+              handleBirthChange(birthYear, birthMonth, e.target.value);
+            }}
+            className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+          >
+            <option value="">일</option>
+            {DAYS.map((d) => <option key={d} value={String(d)}>{d}일</option>)}
+          </select>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1.5">
             태어난 시간 <span className="text-gray-400 font-normal">(선택)</span>
@@ -87,19 +137,18 @@ export default function SajuForm({ onResult }: Props) {
             className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
           />
         </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1.5">운세 연도</label>
-        <select
-          value={form.year}
-          onChange={(e) => setForm({ ...form, year: Number(e.target.value) })}
-          className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
-        >
-          {[currentYear - 1, currentYear, currentYear + 1].map((y) => (
-            <option key={y} value={y}>{y}년</option>
-          ))}
-        </select>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1.5">운세 연도</label>
+          <select
+            value={form.year}
+            onChange={(e) => setForm({ ...form, year: Number(e.target.value) })}
+            className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+          >
+            {[currentYear - 1, currentYear, currentYear + 1].map((y) => (
+              <option key={y} value={y}>{y}년</option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {error && (
