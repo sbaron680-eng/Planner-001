@@ -93,8 +93,14 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       ? buildSajuPrompt(body.input as Parameters<typeof buildSajuPrompt>[0])
       : buildAstrologyPrompt(body.input as Parameters<typeof buildAstrologyPrompt>[0]);
 
+    if (!env.ANTHROPIC_API_KEY) {
+      return jsonResponse({ ok: false, error: 'API 키가 설정되지 않았습니다.' }, 500);
+    }
+
     const text = await callClaude(env.ANTHROPIC_API_KEY, prompt);
-    const parsed = JSON.parse(text) as Omit<FortuneResult, 'id' | 'type'> & { monthly_fortunes: MonthlyFortune[] };
+    // Claude sometimes wraps JSON in markdown fences — strip them
+    const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
+    const parsed = JSON.parse(cleaned) as Omit<FortuneResult, 'id' | 'type'> & { monthly_fortunes: MonthlyFortune[] };
 
     const result: FortuneResult = {
       id: crypto.randomUUID(),
@@ -104,7 +110,8 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
 
     return jsonResponse({ ok: true, data: result });
   } catch (err) {
-    console.error('Fortune error:', err);
-    return jsonResponse({ ok: false, error: '운세 분석 중 오류가 발생했습니다.' }, 500);
+    const message = err instanceof Error ? err.message : String(err);
+    console.error('Fortune error:', message);
+    return jsonResponse({ ok: false, error: `운세 분석 중 오류가 발생했습니다: ${message}` }, 500);
   }
 };
