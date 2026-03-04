@@ -15,6 +15,6 @@ database_id = "YOUR_D1_DATABASE_ID"
 binding = "SESSIONS"
 id = "YOUR_KV_NAMESPACE_ID"
 
-[triggers]
-# 매년 11월 1일 00:00 KST (UTC 기준 10월 31일 15:00)
-crons = ["0 15 31 10 *"]
+# Note: Cron triggers are configured in the Cloudflare Dashboard
+# (Workers & Pages > planner-001 > Settings > Triggers)
+# Cron: "0 15 31 10 *" = Nov 1 00:00 KST (Oct 31 15:00 UTC)
