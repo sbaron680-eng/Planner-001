@@ -1,11 +1,17 @@
 import { Helmet } from 'react-helmet-async';
-import { buildMeta, SITE, type PageMeta } from '@/lib/seo';
+import { buildMeta, buildBreadcrumbJsonLD, SITE, type PageMeta } from '@/lib/seo';
 
 interface Props extends PageMeta {
   jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  breadcrumbs?: { name: string; url: string }[];
 }
 
-export default function SEOHead({ jsonLd, ...pageMeta }: Props) {
+export default function SEOHead({ jsonLd, breadcrumbs, ...pageMeta }: Props) {
+  const breadcrumbJsonLd = breadcrumbs ? buildBreadcrumbJsonLD(breadcrumbs) : null;
+  const allJsonLd = [
+    ...(Array.isArray(jsonLd) ? jsonLd : jsonLd ? [jsonLd] : []),
+    ...(breadcrumbJsonLd ? [breadcrumbJsonLd] : []),
+  ];
   const meta = buildMeta(pageMeta);
 
   return (
@@ -35,9 +41,9 @@ export default function SEOHead({ jsonLd, ...pageMeta }: Props) {
       <link rel="canonical" href={meta.url} />
 
       {/* JSON-LD 구조화 데이터 */}
-      {jsonLd && (
+      {allJsonLd.length > 0 && (
         <script type="application/ld+json">
-          {JSON.stringify(Array.isArray(jsonLd) ? jsonLd : [jsonLd])}
+          {JSON.stringify(allJsonLd)}
         </script>
       )}
     </Helmet>

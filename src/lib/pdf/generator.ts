@@ -71,7 +71,7 @@ export async function generatePDF(req: PDFGenerateRequest): Promise<Uint8Array> 
   const holidays = getHolidays(year);
   const holidayMap = new Map(holidays.map((h) => [h.date, h]));
 
-  const pdfDoc = PDFDocument.create();
+  const pdfDoc = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
 
   // ── 폰트 로드 ────────────────────────────────────────
