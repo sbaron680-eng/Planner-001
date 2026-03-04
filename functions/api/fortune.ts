@@ -1,5 +1,4 @@
 import type { PagesFunction } from '@cloudflare/workers-types';
-import Anthropic from '@anthropic-ai/sdk';
 import type { Env } from '../_types';
 import { jsonResponse } from '../_middleware';
 import type { FortuneResult, MonthlyFortune } from '../../src/types';
@@ -60,6 +59,29 @@ function buildAstrologyPrompt(input: { name: string; birth_date: string; zodiac?
 JSON만 응답하고 다른 텍스트는 포함하지 마세요.`;
 }
 
+// Anthropic REST API를 fetch로 직접 호출 (npm 패키지 불필요)
+async function callClaude(apiKey: string, prompt: string): Promise<string> {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': apiKey,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 2048,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Anthropic API error ${res.status}: ${err}`);
+  }
+  const data = await res.json() as { content: Array<{ type: string; text: string }> };
+  return data.content[0]?.type === 'text' ? data.content[0].text : '';
+}
+
 export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
   try {
     const body = await request.json() as {
@@ -67,18 +89,11 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       input: Record<string, unknown>;
     };
 
-    const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
     const prompt = body.type === 'saju'
       ? buildSajuPrompt(body.input as Parameters<typeof buildSajuPrompt>[0])
       : buildAstrologyPrompt(body.input as Parameters<typeof buildAstrologyPrompt>[0]);
 
-    const message = await client.messages.create({
-      model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
-      messages: [{ role: 'user', content: prompt }],
-    });
-
-    const text = message.content[0].type === 'text' ? message.content[0].text : '';
+    const text = await callClaude(env.ANTHROPIC_API_KEY, prompt);
     const parsed = JSON.parse(text) as Omit<FortuneResult, 'id' | 'type'> & { monthly_fortunes: MonthlyFortune[] };
 
     const result: FortuneResult = {
