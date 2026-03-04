@@ -1,0 +1,20 @@
+name = "planner-001"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = "dist"
+
+[vars]
+SITE_URL = "https://planner-001.pages.dev"
+SITE_NAME = "Planner 001"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "planner-db"
+database_id = "YOUR_D1_DATABASE_ID"
+
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "YOUR_KV_NAMESPACE_ID"
+
+[triggers]
+# 매년 11월 1일 00:00 KST (UTC 기준 10월 31일 15:00)
+crons = ["0 15 31 10 *"]

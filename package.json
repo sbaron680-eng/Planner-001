@@ -1,34 +1,40 @@
 {
   "name": "planner-001",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "pages:dev": "wrangler pages dev dist --compatibility-date=2024-01-01",
+    "pages:deploy": "npm run build && wrangler pages deploy dist",
+    "db:migrate": "wrangler d1 execute planner-db --file=schema/001_init.sql",
+    "db:seed": "wrangler d1 execute planner-db --file=schema/002_seed.sql"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.26.0",
+    "@tanstack/react-query": "^5.28.0",
+    "date-fns": "^3.3.1",
+    "lucide-react": "^0.323.0",
+    "pdf-lib": "^1.17.1",
+    "@pdf-lib/fontkit": "^1.1.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "zustand": "^4.5.0",
-    "date-fns": "^3.3.1",
-    "lucide-react": "^0.323.0"
+    "react-helmet-async": "^2.0.4",
+    "react-router-dom": "^6.22.2",
+    "zustand": "^4.5.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240222.0",
     "@types/react": "^18.2.55",
     "@types/react-dom": "^18.2.19",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.17",
-    "eslint": "^8.56.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.5",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.2.2",
-    "vite": "^5.1.0"
+    "vite": "^5.1.0",
+    "wrangler": "^3.30.1"
   }
 }
