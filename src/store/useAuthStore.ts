@@ -10,6 +10,7 @@ interface AuthState {
 
   login: (email: string, password: string) => Promise<string | null>;
   register: (data: { email: string; password: string; name: string }) => Promise<string | null>;
+  loginWithToken: (token: string) => Promise<void>;
   logout: () => void;
   fetchMe: () => Promise<void>;
 }
@@ -48,6 +49,19 @@ export const useAuthStore = create<AuthState>()(
           return null;
         }
         return res.error ?? '회원가입에 실패했습니다.';
+      },
+
+      loginWithToken: async (token: string) => {
+        setToken(token);
+        set({ token });
+        const res = await authApi.me();
+        if (res.ok && res.data) {
+          set({ user: res.data });
+          _clearProfile?.();
+        } else {
+          set({ token: null });
+          clearToken();
+        }
       },
 
       logout: () => {

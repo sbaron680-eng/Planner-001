@@ -7,6 +7,7 @@ import PlannerDetailPage from './pages/PlannerDetailPage';
 import FortunePage from './pages/FortunePage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import OAuthCallbackPage from './pages/OAuthCallbackPage';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
 import AdminPage from './pages/AdminPage';
@@ -24,6 +25,7 @@ export const router = createBrowserRouter([
       { path: 'fortune', element: <FortunePage /> },
       { path: 'login', element: <LoginPage /> },
       { path: 'register', element: <RegisterPage /> },
+      { path: 'auth/oauth', element: <OAuthCallbackPage /> },
       { path: 'dashboard', element: <DashboardPage /> },
       { path: 'profile', element: <ProfilePage /> },
       { path: 'admin', element: <AdminPage /> },
