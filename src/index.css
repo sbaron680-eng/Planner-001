@@ -1,36 +1,135 @@
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.min.css');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ── 디자인 토큰 ──────────────────────────────────────────── */
+:root {
+  --clr-primary:   79 70 229;   /* indigo-600 */
+  --clr-accent:    245 158 11;  /* amber-500  */
+  --shadow-sm:     0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  --shadow-md:     0 4px 16px -2px rgb(0 0 0 / 0.10), 0 2px 6px -2px rgb(0 0 0 / 0.06);
+  --shadow-lg:     0 16px 40px -4px rgb(0 0 0 / 0.12), 0 6px 16px -4px rgb(0 0 0 / 0.08);
+  --shadow-glow:   0 0 0 3px rgb(var(--clr-primary) / 0.18);
+  --radius-card:   1.25rem;
+  --transition:    0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── 기본 타이포그래피 ────────────────────────────────────── */
 @layer base {
-  *, *::before, *::after {
-    box-sizing: border-box;
-  }
+  *, *::before, *::after { box-sizing: border-box; }
 
   html {
-    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto,
-      'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR',
-      'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
-      sans-serif;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo',
+      'Noto Sans KR', 'Malgun Gothic', sans-serif;
     -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
+    font-feature-settings: 'kern' 1;
   }
 
   body {
     @apply bg-white text-gray-900 antialiased;
+    text-rendering: optimizeLegibility;
   }
 
-  img {
-    @apply max-w-full h-auto;
+  img { @apply max-w-full h-auto; }
+
+  :focus-visible {
+    outline: 2px solid rgb(var(--clr-primary));
+    outline-offset: 2px;
+    border-radius: 4px;
   }
 }
 
+/* ── 유틸리티 클래스 ──────────────────────────────────────── */
 @layer utilities {
+  /* 스크롤바 숨김 */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  .scrollbar-hide::-webkit-scrollbar {
-    display: none;
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
+
+  /* 그라디언트 텍스트 */
+  .text-gradient {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
   }
+  .text-gradient-gold {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* 글래스 카드 */
+  .glass {
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background: rgba(255, 255, 255, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+  }
+  .glass-dark {
+    backdrop-filter: blur(16px) saturate(180%);
+    -webkit-backdrop-filter: blur(16px) saturate(180%);
+    background: rgba(15, 17, 27, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  /* 애니메이션 딜레이 */
+  .animation-delay-100 { animation-delay: 100ms; }
+  .animation-delay-200 { animation-delay: 200ms; }
+  .animation-delay-300 { animation-delay: 300ms; }
+  .animation-delay-500 { animation-delay: 500ms; }
+
+  /* 상태 배지 */
+  .badge-free    { @apply bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200; }
+  .badge-premium { @apply bg-indigo-100 text-indigo-700 ring-1 ring-indigo-200; }
+  .badge-fortune { @apply bg-violet-100 text-violet-700 ring-1 ring-violet-200; }
+
+  /* 호버 카드 리프트 */
+  .card-lift {
+    transition: transform var(--transition), box-shadow var(--transition);
+  }
+  .card-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-lg);
+  }
+}
+
+/* ── 커스텀 애니메이션 ────────────────────────────────────── */
+@layer utilities {
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50%      { transform: translateY(-10px); }
+  }
+  @keyframes shimmer {
+    0%   { background-position: -200% center; }
+    100% { background-position: 200% center; }
+  }
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgb(var(--clr-primary) / 0.3); }
+    50%      { box-shadow: 0 0 0 8px rgb(var(--clr-primary) / 0); }
+  }
+
+  .animate-fade-up   { animation: fade-up 0.6s ease both; }
+  .animate-fade-in   { animation: fade-in 0.5s ease both; }
+  .animate-float     { animation: float 4s ease-in-out infinite; }
+  .animate-shimmer   {
+    background: linear-gradient(90deg, transparent 25%, rgba(255,255,255,0.4) 50%, transparent 75%);
+    background-size: 200% auto;
+    animation: shimmer 2s linear infinite;
+  }
+  .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
 }
