@@ -7,8 +7,8 @@
  * 4. 프론트엔드 콜백 리다이렉트 빌더
  */
 
-import type { Env } from '../../_types';
-import { signJwt } from '../../_crypto';
+import type { Env } from '../../../_types';
+import { signJwt } from '../../../_crypto';
 
 // ── CSRF state 관리 ──────────────────────────────────────
 
