@@ -48,24 +48,19 @@ export default function AstrologyForm({ onResult }: Props) {
   // 프로파일 자동 입력
   useEffect(() => {
     if (!profile || autoFilled) return;
-    const src = profile.astro_data ?? profile.saju_data ?? {};
+    const src = profile.astro_data ?? profile.saju_data;
     let changed = false;
-    if (src.name) { setForm(f => ({ ...f, name: src.name ?? '' })); changed = true; }
-    if (src.birth_date) {
+    if (src?.name) { setForm(f => ({ ...f, name: src.name })); changed = true; }
+    if (src?.birth_date) {
       const [y, m, d] = src.birth_date.split('-');
-      setBirthYear(y); setBirthMonth(String(parseInt(m,10))); setBirthDay(String(parseInt(d,10)));
-      setForm(f => ({ ...f, birth_date: src.birth_date ?? '' }));
+      setBirthYear(y); setBirthMonth(String(parseInt(m, 10))); setBirthDay(String(parseInt(d, 10)));
+      setForm(f => ({ ...f, birth_date: src.birth_date }));
       changed = true;
     }
-    if (profile.zodiac || (profile.astro_data as { zodiac?: string })?.zodiac) {
-      const z = profile.zodiac || (profile.astro_data as { zodiac?: string })?.zodiac || '';
-      setForm(f => ({ ...f, zodiac: z }));
-      changed = true;
-    }
-    if ((profile.astro_data as { focus?: string })?.focus) {
-      setForm(f => ({ ...f, focus: (profile.astro_data as { focus?: string })?.focus }));
-      changed = true;
-    }
+    const z = profile.zodiac ?? profile.astro_data?.zodiac;
+    if (z) { setForm(f => ({ ...f, zodiac: z })); changed = true; }
+    const focus = profile.astro_data?.focus;
+    if (focus) { setForm(f => ({ ...f, focus })); changed = true; }
     if (changed) setAutoFilled(true);
   }, [profile, autoFilled]);
 

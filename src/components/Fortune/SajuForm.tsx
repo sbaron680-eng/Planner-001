@@ -36,19 +36,19 @@ export default function SajuForm({ onResult }: Props) {
 
   useEffect(() => {
     if (!profile || autoFilled) return;
-    const src = profile.saju_data ?? {};
+    const src = profile.saju_data;
     let changed = false;
-    if (src.name)       { setForm(f => ({ ...f, name: src.name ?? '' })); changed = true; }
-    if (src.birth_date) {
+    if (src?.name)       { setForm(f => ({ ...f, name: src.name })); changed = true; }
+    if (src?.birth_date) {
       const [y, m, d] = src.birth_date.split('-');
       setBirthYear(y);
       setBirthMonth(String(parseInt(m, 10)));
       setBirthDay(String(parseInt(d, 10)));
-      setForm(f => ({ ...f, birth_date: src.birth_date ?? '' }));
+      setForm(f => ({ ...f, birth_date: src.birth_date }));
       changed = true;
     }
-    if (src.birth_jiji) { setJijiTime(src.birth_jiji); changed = true; }
-    if (src.gender)     { setForm(f => ({ ...f, gender: (src.gender ?? 'female') as 'male' | 'female' })); changed = true; }
+    if (src?.birth_jiji) { setJijiTime(src.birth_jiji); changed = true; }
+    if (src?.gender)     { setForm(f => ({ ...f, gender: src.gender as 'male' | 'female' })); changed = true; }
     if (changed) setAutoFilled(true);
   }, [profile, autoFilled]);
 

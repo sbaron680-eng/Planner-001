@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { profileApi } from '@/lib/api';
 import type { UserProfile } from '@/types';
+import { registerProfileClear } from '@/store/useAuthStore';
 
 interface ProfileState {
   profile: UserProfile | null;
@@ -42,3 +43,6 @@ export const useProfileStore = create<ProfileState>((set, get) => ({
 
   clearProfile: () => set({ profile: null, lastFetched: null }),
 }));
+
+// 로그인/로그아웃 시 프로파일 캐시 자동 클리어 등록
+registerProfileClear(() => useProfileStore.getState().clearProfile());

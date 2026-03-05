@@ -14,6 +14,10 @@ interface AuthState {
   fetchMe: () => Promise<void>;
 }
 
+// 순환 의존 방지: 프로파일 클리어는 이벤트 방식으로 처리
+let _clearProfile: (() => void) | null = null;
+export function registerProfileClear(fn: () => void) { _clearProfile = fn; }
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -28,6 +32,7 @@ export const useAuthStore = create<AuthState>()(
         if (res.ok && res.data) {
           set({ user: res.data.user, token: res.data.token });
           setToken(res.data.token);
+          _clearProfile?.();
           return null;
         }
         return res.error ?? '로그인에 실패했습니다.';
@@ -49,6 +54,7 @@ export const useAuthStore = create<AuthState>()(
         authApi.logout();
         set({ user: null, token: null });
         clearToken();
+        _clearProfile?.();
       },
 
       fetchMe: async () => {

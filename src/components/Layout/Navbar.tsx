@@ -84,6 +84,10 @@ export default function Navbar() {
                       className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors rounded-lg mx-1">
                       <User size={14} /> 대시보드
                     </Link>
+                    <Link to="/profile" onClick={() => setDropOpen(false)}
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors rounded-lg mx-1">
+                      <Settings size={14} /> 내 프로파일
+                    </Link>
                     {user.role === 'admin' && (
                       <Link to="/admin" onClick={() => setDropOpen(false)}
                         className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors rounded-lg mx-1">
@@ -135,6 +139,7 @@ export default function Navbar() {
           {user ? (
             <>
               <Link to="/dashboard" className="block px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50" onClick={() => setMenuOpen(false)}>대시보드</Link>
+              <Link to="/profile" className="block px-3 py-2.5 rounded-xl text-sm text-gray-700 hover:bg-gray-50" onClick={() => setMenuOpen(false)}>내 프로파일</Link>
               <button onClick={handleLogout} className="block px-3 py-2.5 w-full text-left rounded-xl text-sm text-red-600 hover:bg-red-50">로그아웃</button>
             </>
           ) : (
