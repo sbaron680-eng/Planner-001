@@ -1,6 +1,7 @@
 import type { PagesFunction } from '@cloudflare/workers-types';
 import type { Env } from '../_types';
-import { jsonResponse } from '../_middleware';
+import { jsonResponse, getAuthUser } from '../_middleware';
+import { encryptField, decryptField, hashCacheKey } from '../_crypto';
 import type { FortuneResult, MonthlyFortune, SajuInput, AstrologyInput, CoupleInput } from '../../src/types';
 
 // ── 연도 간지 계산 ────────────────────────────────────────
@@ -43,8 +44,8 @@ function buildSajuPrompt(input: SajuInput): string {
 
 다음 JSON 형식으로 정확히 응답하세요 (JSON 외 다른 텍스트 금지):
 {
-  "summary": "종합 운세 요약 — 200자 내외, 전반적인 흐름과 핵심 키워드 포함",
-  "yearly_fortune": "연간 운세 상세 — 300자 내외, ${input.year}년의 큰 흐름과 기회·도전 요소",
+  "summary": "종합 운세 요약 — 200자 내외",
+  "yearly_fortune": "연간 운세 상세 — 300자 내외",
   "relationships": "인간관계·사랑운 — 150자 내외",
   "career": "직업·사업·학업운 — 150자 내외",
   "wealth": "금전·재물·투자운 — 150자 내외",
@@ -79,11 +80,8 @@ function buildSajuPrompt(input: SajuInput): string {
 function buildAstrologyPrompt(input: AstrologyInput): string {
   const yearDesc = getYearGanji(input.year);
   const zodiac = input.zodiac || '생년월일에서 자동 감지';
-  const focusHint = input.focus
-    ? `\n• 특별히 "${input.focus}" 분야를 더 상세히 분석해주세요.`
-    : '';
+  const focusHint = input.focus ? `\n• 특별히 "${input.focus}" 분야를 더 상세히 분석해주세요.` : '';
 
-  // 연도별 주요 천문학적 이벤트 (참고용)
   const astronomyNote = input.year === 2025
     ? '2025년 주요 행성 이동: 토성 물고기자리→양자리 전환, 해왕성 물고기자리 마지막 해, 천왕성 황소자리, 목성 쌍둥이자리→게자리 전환. 주요 역행: 수성 역행 3회(1·5·9월), 금성 역행(3월)'
     : input.year === 2026
@@ -106,8 +104,7 @@ ${astronomyNote}
 1. 태양궁 별자리의 고유 특성과 지배 행성 영향을 중심으로 분석하세요.
 2. ${input.year}년 주요 행성 트랜짓이 해당 별자리에 미치는 구체적 영향을 서술하세요.
 3. 수성·금성·화성 역행 기간의 주의사항을 월별 운세에 반영하세요.
-4. 상승궁(Ascendant)은 생년월일 기반이므로 추정이 어려운 점을 인정하되, 태양궁 중심 분석에 집중하세요.
-5. 한국어로 따뜻하고 희망적인 톤으로 작성하세요.
+4. 한국어로 따뜻하고 희망적인 톤으로 작성하세요.
 
 다음 JSON 형식으로 정확히 응답하세요 (JSON 외 다른 텍스트 금지):
 {
@@ -154,13 +151,13 @@ function buildCouplePrompt(input: CoupleInput): string {
 • 이름: ${p1.name}
 • 생년월일: ${p1.birth_date}
 • 성별: ${p1.gender === 'male' ? '남성' : '여성'}
-${p1.birth_jiji ? `• 시주: ${p1.birth_jiji}시` : p1.birth_time ? `• 태어난 시각: ${p1.birth_time}` : ''}
+${p1.birth_jiji ? `• 시주: ${p1.birth_jiji}시` : ''}
 
 【 두 번째 사람 】
 • 이름: ${p2.name}
 • 생년월일: ${p2.birth_date}
 • 성별: ${p2.gender === 'male' ? '남성' : '여성'}
-${p2.birth_jiji ? `• 시주: ${p2.birth_jiji}시` : p2.birth_time ? `• 태어난 시각: ${p2.birth_time}` : ''}
+${p2.birth_jiji ? `• 시주: ${p2.birth_jiji}시` : ''}
 
 • 분석 연도: ${input.year}년 (${yearDesc})
 
@@ -247,11 +244,33 @@ async function callClaude(apiKey: string, prompt: string, maxTokens = 2800): Pro
 }
 
 function parseFortuneJson(text: string): Omit<FortuneResult, 'id' | 'type'> {
-  const cleaned = text
-    .replace(/^```(?:json)?\s*/i, '')
-    .replace(/\s*```\s*$/, '')
-    .trim();
+  const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/, '').trim();
   return JSON.parse(cleaned) as Omit<FortuneResult, 'id' | 'type'>;
+}
+
+// ── 캐시된 운세 조회 (24시간 이내, 사주/점성술) ─────────
+async function getCachedFortune(
+  db: D1Database,
+  cacheKey: string,
+  encKey: string | undefined,
+): Promise<FortuneResult | null> {
+  // daily 운세는 캐시 24시간
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const row = await db.prepare(
+    `SELECT id, type, result, is_encrypted FROM fortune_records
+     WHERE cache_key = ? AND created_at > ? ORDER BY created_at DESC LIMIT 1`
+  ).bind(cacheKey, cutoff).first() as Record<string, unknown> | null;
+
+  if (!row?.result) return null;
+  try {
+    const raw = row.is_encrypted && encKey
+      ? await decryptField(row.result as string, encKey)
+      : row.result as string;
+    const parsed = JSON.parse(raw) as Omit<FortuneResult, 'id' | 'type'>;
+    return { id: row.id as string, type: row.type as FortuneResult['type'], monthly_fortunes: [], ...parsed };
+  } catch {
+    return null;
+  }
 }
 
 // ── 메인 핸들러 ───────────────────────────────────────────
@@ -266,9 +285,24 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
       input: Record<string, unknown>;
     };
 
+    // 인증 사용자 확인 (선택적)
+    const auth = await getAuthUser(request, env);
+
     let prompt: string;
     let fortuneType: FortuneResult['type'];
     let maxTokens = 2800;
+
+    // 입력 데이터 기반 캐시 키 (사주/점성술/커플은 동일 입력이면 캐시 재사용)
+    const cacheInput = { type: body.type, ...body.input };
+    const cacheKey = await hashCacheKey(cacheInput);
+
+    // 캐시 확인 (daily는 제외)
+    if (body.type !== 'daily') {
+      const cached = await getCachedFortune(env.DB, cacheKey, env.FIELD_ENCRYPTION_KEY);
+      if (cached) {
+        return jsonResponse({ ok: true, data: cached, cached: true });
+      }
+    }
 
     switch (body.type) {
       case 'saju':
@@ -298,12 +332,53 @@ export const onRequestPost: PagesFunction<Env> = async ({ request, env }) => {
     const text = await callClaude(env.ANTHROPIC_API_KEY, prompt, maxTokens);
     const parsed = parseFortuneJson(text);
 
+    const id = crypto.randomUUID();
     const result: FortuneResult = {
-      id: crypto.randomUUID(),
+      id,
       type: fortuneType,
       monthly_fortunes: [],
       ...parsed,
     };
+
+    // DB 저장 (비동기 — 응답에 영향 없음)
+    void (async () => {
+      try {
+        const now = new Date().toISOString();
+        // 입력 데이터 & 결과 암호화 (FIELD_ENCRYPTION_KEY 있을 때)
+        const encKey = env.FIELD_ENCRYPTION_KEY;
+        const inputStr = JSON.stringify(body.input);
+        const resultStr = JSON.stringify(parsed);
+
+        let storedInput = inputStr;
+        let storedResult = resultStr;
+        let isEncrypted = 0;
+
+        if (encKey) {
+          storedInput  = await encryptField(inputStr, encKey);
+          storedResult = await encryptField(resultStr, encKey);
+          isEncrypted  = 1;
+        }
+
+        const yearVal = (body.input as { year?: number }).year ?? new Date().getFullYear();
+
+        await env.DB.prepare(`
+          INSERT INTO fortune_records (id, user_id, type, input_data, result, year, cache_key, is_encrypted, created_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          id,
+          auth?.userId ?? null,
+          fortuneType,
+          storedInput,
+          storedResult,
+          yearVal,
+          cacheKey,
+          isEncrypted,
+          now,
+        ).run();
+      } catch (dbErr) {
+        console.error('Fortune DB save error:', dbErr);
+      }
+    })();
 
     return jsonResponse({ ok: true, data: result });
   } catch (err) {

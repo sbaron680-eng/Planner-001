@@ -150,3 +150,48 @@ export function setToken(token: string): void {
 export function clearToken(): void {
   localStorage.removeItem('planner_token');
 }
+
+// ── 사용자 프로파일 ─────────────────────────────────────
+export const profileApi = {
+  get: () =>
+    req<import('@/types').UserProfile>('/profile', {
+      headers: { Authorization: `Bearer ${getToken()}` },
+    }),
+
+  update: (data: Partial<{
+    birth_date: string;
+    birth_jiji: string;
+    gender: 'male' | 'female';
+    zodiac: string;
+    saju_name: string;
+    astro_name: string;
+    astro_focus: string;
+    partner_name: string;
+    partner_birth_date: string;
+    partner_birth_jiji: string;
+    partner_gender: 'male' | 'female';
+    preferred_template: string;
+    preferred_year: number;
+  }>) =>
+    req<{ message: string }>('/profile', {
+      method: 'POST',
+      body: JSON.stringify(data),
+      headers: { Authorization: `Bearer ${getToken()}` },
+    }),
+};
+
+// ── 운세 기록 ───────────────────────────────────────────
+export const fortuneHistoryApi = {
+  list: (type?: string, page = 1) =>
+    req<import('@/types').FortuneHistoryItem[]>(
+      `/fortune/history${type ? `?type=${type}&page=${page}` : `?page=${page}`}`,
+      { headers: { Authorization: `Bearer ${getToken()}` } },
+    ),
+
+  get: (id: string) =>
+    req<import('@/types').FortuneResult>('/fortune/history', {
+      method: 'POST',
+      body: JSON.stringify({ id }),
+      headers: { Authorization: `Bearer ${getToken()}` },
+    }),
+};

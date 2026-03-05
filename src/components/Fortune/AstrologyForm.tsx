@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Loader2, Sparkles, Star } from 'lucide-react';
+import { Loader2, Sparkles, Star, UserCircle } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import type { AstrologyInput, FortuneResult } from '@/types';
 import {
   ZODIAC_LIST, ZODIAC_SYMBOL, ZODIAC_DATES, ZODIAC_ELEMENT, ZODIAC_RULER, ZODIAC_COLOR,
   detectZodiac, getGanji, getYearDescription,
 } from '@/lib/saju';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useProfileStore } from '@/store/useProfileStore';
 
 interface Props {
   onResult: (result: FortuneResult) => void;
@@ -15,27 +18,58 @@ const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const DAYS   = Array.from({ length: 31 }, (_, i) => i + 1);
 
 const FOCUS_OPTIONS = [
-  { id: '',         label: '전체', icon: '✨' },
-  { id: 'love',     label: '사랑·연애', icon: '💕' },
-  { id: 'career',   label: '직업·사업', icon: '💼' },
-  { id: 'money',    label: '재물·금전', icon: '💰' },
-  { id: 'health',   label: '건강', icon: '🌿' },
+  { id: '',        label: '전체', icon: '✨' },
+  { id: 'love',   label: '사랑·연애', icon: '💕' },
+  { id: 'career', label: '직업·사업', icon: '💼' },
+  { id: 'money',  label: '재물·금전', icon: '💰' },
+  { id: 'health', label: '건강', icon: '🌿' },
 ];
 
 const INPUT_CLS = 'w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none bg-white transition-shadow';
 
 export default function AstrologyForm({ onResult }: Props) {
+  const { user } = useAuthStore();
+  const { profile, fetchProfile } = useProfileStore();
   const [loading, setLoading]   = useState(false);
   const [error,   setError]     = useState<string | null>(null);
   const [birthYear,  setBirthYear]  = useState('');
   const [birthMonth, setBirthMonth] = useState('');
   const [birthDay,   setBirthDay]   = useState('');
   const [autoZodiac, setAutoZodiac] = useState<string>('');
+  const [autoFilled, setAutoFilled] = useState(false);
   const [form, setForm] = useState<AstrologyInput>({
     name: '', birth_date: '', zodiac: '', year: CY,
   });
 
-  // Auto-detect zodiac when birth month+day are set
+  useEffect(() => {
+    if (user) fetchProfile();
+  }, [user, fetchProfile]);
+
+  // 프로파일 자동 입력
+  useEffect(() => {
+    if (!profile || autoFilled) return;
+    const src = profile.astro_data ?? profile.saju_data ?? {};
+    let changed = false;
+    if (src.name) { setForm(f => ({ ...f, name: src.name ?? '' })); changed = true; }
+    if (src.birth_date) {
+      const [y, m, d] = src.birth_date.split('-');
+      setBirthYear(y); setBirthMonth(String(parseInt(m,10))); setBirthDay(String(parseInt(d,10)));
+      setForm(f => ({ ...f, birth_date: src.birth_date ?? '' }));
+      changed = true;
+    }
+    if (profile.zodiac || (profile.astro_data as { zodiac?: string })?.zodiac) {
+      const z = profile.zodiac || (profile.astro_data as { zodiac?: string })?.zodiac || '';
+      setForm(f => ({ ...f, zodiac: z }));
+      changed = true;
+    }
+    if ((profile.astro_data as { focus?: string })?.focus) {
+      setForm(f => ({ ...f, focus: (profile.astro_data as { focus?: string })?.focus }));
+      changed = true;
+    }
+    if (changed) setAutoFilled(true);
+  }, [profile, autoFilled]);
+
+  // 생년월일로 별자리 자동 감지
   useEffect(() => {
     const m = parseInt(birthMonth, 10);
     const d = parseInt(birthDay, 10);
@@ -52,8 +86,7 @@ export default function AstrologyForm({ onResult }: Props) {
     setForm(prev => ({
       ...prev,
       birth_date: y.length === 4 && m && d
-        ? `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`
-        : '',
+        ? `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}` : '',
     }));
   }
 
@@ -63,9 +96,12 @@ export default function AstrologyForm({ onResult }: Props) {
     setLoading(true);
     setError(null);
     try {
-      const res  = await fetch('/api/fortune', {
+      const res = await fetch('/api/fortune', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(localStorage.getItem('planner_token') ? { Authorization: `Bearer ${localStorage.getItem('planner_token')}` } : {}),
+        },
         body: JSON.stringify({ type: 'astrology', input: form }),
       });
       const data = await res.json();
@@ -82,6 +118,13 @@ export default function AstrologyForm({ onResult }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {user && autoFilled && (
+        <div className="flex items-center gap-2 text-xs text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5">
+          <UserCircle size={14} className="flex-shrink-0" />
+          프로파일에서 자동 입력됨 · <Link to="/profile" className="underline font-medium">프로파일 수정</Link>
+        </div>
+      )}
+
       {/* 이름 */}
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-1.5">이름</label>
@@ -96,11 +139,7 @@ export default function AstrologyForm({ onResult }: Props) {
         <div className="grid grid-cols-3 gap-2">
           <input type="number" required min={1900} max={CY} placeholder="년도"
             value={birthYear}
-            onChange={e => {
-              const v = e.target.value.slice(0, 4);
-              setBirthYear(v);
-              syncBirthDate(v, birthMonth, birthDay);
-            }}
+            onChange={e => { const v = e.target.value.slice(0,4); setBirthYear(v); syncBirthDate(v, birthMonth, birthDay); }}
             className={INPUT_CLS} />
           <select required value={birthMonth}
             onChange={e => { setBirthMonth(e.target.value); syncBirthDate(birthYear, e.target.value, birthDay); }}
@@ -125,10 +164,7 @@ export default function AstrologyForm({ onResult }: Props) {
 
       {/* 별자리 선택 그리드 */}
       <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2.5">
-          별자리 선택
-          <span className="text-gray-400 font-normal text-xs ml-1">(생년월일로 자동 감지되었습니다)</span>
-        </label>
+        <label className="block text-sm font-semibold text-gray-700 mb-2.5">별자리 선택</label>
         <div className="grid grid-cols-4 gap-2">
           {ZODIAC_LIST.map(z => {
             const isSelected = form.zodiac === z;
@@ -136,9 +172,7 @@ export default function AstrologyForm({ onResult }: Props) {
               <button key={z} type="button"
                 onClick={() => setForm({ ...form, zodiac: z })}
                 className={`flex flex-col items-center gap-1 p-2.5 rounded-xl border-2 text-center transition-all ${
-                  isSelected
-                    ? 'border-indigo-500 bg-indigo-50 shadow-sm'
-                    : 'border-gray-100 hover:border-gray-300 bg-white'
+                  isSelected ? 'border-indigo-500 bg-indigo-50 shadow-sm' : 'border-gray-100 hover:border-gray-300 bg-white'
                 }`}>
                 <span className={`text-lg bg-gradient-to-br ${ZODIAC_COLOR[z]} bg-clip-text`}
                   style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: isSelected ? undefined : 'inherit' }}>
@@ -152,11 +186,8 @@ export default function AstrologyForm({ onResult }: Props) {
             );
           })}
         </div>
-
-        {/* 선택된 별자리 정보 */}
         {selectedZodiac && (
-          <div className={`mt-3 flex items-center gap-3 p-3 rounded-xl bg-gradient-to-r ${ZODIAC_COLOR[selectedZodiac]} bg-opacity-10`}
-            style={{ background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%)' }}>
+          <div className="mt-3 flex items-center gap-3 p-3 rounded-xl" style={{ background: 'linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%)' }}>
             <span className="text-2xl">{ZODIAC_SYMBOL[selectedZodiac]}</span>
             <div>
               <p className="text-sm font-bold text-gray-900">{selectedZodiac}</p>
@@ -176,9 +207,7 @@ export default function AstrologyForm({ onResult }: Props) {
             <button key={y} type="button"
               onClick={() => setForm({ ...form, year: y })}
               className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
-                form.year === y
-                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                  : 'border-gray-200 text-gray-500 hover:border-gray-300'
+                form.year === y ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-500 hover:border-gray-300'
               }`}>
               <span className="block">{y}년</span>
               <span className="block text-[10px] font-medium opacity-70">{getGanji(y)}년</span>
@@ -200,9 +229,7 @@ export default function AstrologyForm({ onResult }: Props) {
             <button key={opt.id} type="button"
               onClick={() => setForm({ ...form, focus: opt.id || undefined })}
               className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-all ${
-                (form.focus ?? '') === opt.id
-                  ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                  : 'border-gray-200 text-gray-600 hover:border-gray-300'
+                (form.focus ?? '') === opt.id ? 'border-indigo-500 bg-indigo-50 text-indigo-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'
               }`}>
               {opt.icon} {opt.label}
             </button>

@@ -191,3 +191,47 @@ export interface AdminStats {
   pdfs_generated: number;
   fortune_requests: number;
 }
+
+// ── 사용자 프로파일 (운세·PDF 개인 설정) ────────────────
+export interface SajuProfile {
+  name: string;
+  birth_date: string;
+  birth_jiji?: string;
+  gender?: 'male' | 'female';
+}
+
+export interface AstroProfile {
+  name: string;
+  birth_date: string;
+  zodiac?: string;
+  focus?: string;
+}
+
+export interface PartnerProfile {
+  name: string;
+  birth_date: string;
+  birth_jiji?: string;
+  gender?: 'male' | 'female';
+}
+
+export interface UserProfile {
+  // users 테이블 기본 정보
+  birth_date?: string;
+  birth_jiji?: string;
+  gender?: 'male' | 'female';
+  zodiac?: string;
+  // 암호화된 프로파일 (복호화됨)
+  saju_data?: SajuProfile;
+  astro_data?: AstroProfile;
+  partner_data?: PartnerProfile;
+  preferred_template?: string;
+  preferred_year?: number;
+}
+
+export interface FortuneHistoryItem {
+  id: string;
+  type: FortuneType;
+  year: number;
+  created_at: string;
+  summary?: string;
+}
