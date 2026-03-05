@@ -1,20 +1,35 @@
 # This file is for LOCAL DEVELOPMENT only (wrangler pages dev).
 # Production config is in the Cloudflare Dashboard.
 #
-# Dashboard 설정 (Pages > planner-001 > Settings):
-#   Build command: npm run build
-#   Build output directory: dist
-#   Environment variables: SITE_URL, SITE_NAME, ANTHROPIC_API_KEY, JWT_SECRET
-#   D1 database binding: DB -> planner-db
-#   KV namespace binding: SESSIONS
-#   Cron trigger: 0 15 31 10 * (Nov 1 KST)
+# Dashboard 설정 (Pages > planner-001 > Settings > Environment variables):
+#   APP_URL              = https://planner-001.pages.dev
+#   ANTHROPIC_API_KEY    = sk-ant-...
+#   JWT_SECRET           = (랜덤 32자 이상)
+#   FIELD_ENCRYPTION_KEY = (랜덤 32자 이상)
+#   GOOGLE_CLIENT_ID     = ...apps.googleusercontent.com
+#   GOOGLE_CLIENT_SECRET = GOCSPX-...
+#   KAKAO_CLIENT_ID      = ...
+#   KAKAO_CLIENT_SECRET  = ...
+#   NAVER_CLIENT_ID      = ...
+#   NAVER_CLIENT_SECRET  = ...
+#
+# D1 database binding : DB       -> planner-db
+# KV namespace binding: SESSIONS -> (KV namespace ID)
+#
+# 로컬 시크릿은 .dev.vars 파일에 작성 (git 제외됨):
+#   cp .dev.vars.example .dev.vars  →  값 입력 후 사용
 
 name = "planner-001"
+pages_build_output_dir = "dist"
 compatibility_date = "2024-01-01"
 
 [vars]
-SITE_URL = "https://planner-001.pages.dev"
+APP_URL  = "http://localhost:8788"
 SITE_NAME = "Planner 001"
+# OAuth Client ID (공개 값 — 시크릿 아님)
+GOOGLE_CLIENT_ID = ""
+KAKAO_CLIENT_ID  = ""
+NAVER_CLIENT_ID  = ""
 
 [[d1_databases]]
 binding = "DB"

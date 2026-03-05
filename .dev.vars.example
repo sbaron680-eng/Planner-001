@@ -1,0 +1,16 @@
+# 로컬 개발용 시크릿 파일 (.dev.vars)
+# 이 파일을 복사해 .dev.vars 로 저장 후 실제 값을 입력하세요.
+# .dev.vars 는 git에 커밋되지 않습니다.
+
+ANTHROPIC_API_KEY=sk-ant-...
+JWT_SECRET=change-me-to-at-least-32-random-chars
+FIELD_ENCRYPTION_KEY=change-me-to-at-least-32-random-chars
+
+# Google OAuth (https://console.cloud.google.com)
+GOOGLE_CLIENT_SECRET=GOCSPX-...
+
+# Kakao OAuth (https://developers.kakao.com)
+KAKAO_CLIENT_SECRET=
+
+# Naver OAuth (https://developers.naver.com)
+NAVER_CLIENT_SECRET=
