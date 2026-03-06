@@ -8,6 +8,7 @@ export interface PageMeta {
   keywords?: string;
   image?: string;
   url?: string;
+  path?: string;
   type?: 'website' | 'article' | 'product';
   noIndex?: boolean;
 }
@@ -26,7 +27,7 @@ export function buildMeta(page: PageMeta): PageMeta & { fullTitle: string } {
     fullTitle: page.title === SITE.name ? SITE.name : `${page.title} | ${SITE.name}`,
     description: page.description || SITE.description,
     image: page.image || SITE.image,
-    url: page.url ? `${SITE.url}${page.url}` : SITE.url,
+    url: page.url ? `${SITE.url}${page.url}` : page.path ? `${SITE.url}${page.path}` : SITE.url,
     type: page.type || 'website',
   };
 }
