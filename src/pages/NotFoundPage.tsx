@@ -4,7 +4,7 @@ import SEOHead from '@/components/Layout/SEOHead';
 export default function NotFoundPage() {
   return (
     <>
-      <SEOHead title="페이지를 찾을 수 없습니다 | Planner 001" description="요청하신 페이지를 찾을 수 없습니다." />
+      <SEOHead title="페이지를 찾을 수 없습니다 | 포춘탭" description="요청하신 페이지를 찾을 수 없습니다." />
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
         <div className="text-center">
           <p className="text-8xl font-bold text-indigo-100 mb-4">404</p>

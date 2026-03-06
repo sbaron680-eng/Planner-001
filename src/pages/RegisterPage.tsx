@@ -11,15 +11,15 @@ export default function RegisterPage() {
   return (
     <>
       <SEOHead
-        title="회원가입 | Planner 001"
-        description="Planner 001에 가입하고 AI 사주·운세 맞춤 PDF 플래너를 만들어보세요."
+        title="회원가입 | FortuneTab"
+        description="포춘탭에 가입하고 AI 사주·운세 맞춤 PDF 플래너를 만들어보세요."
       />
       <div className="min-h-screen flex">
         {/* 좌측 브랜드 패널 (md 이상) */}
         <div className="hidden md:flex flex-col justify-between w-1/2 bg-gradient-to-br from-indigo-600 to-violet-700 p-12 text-white">
           <div className="flex items-center gap-2 font-bold text-xl">
             <BookOpen size={24} />
-            Planner 001
+            FortuneTab
           </div>
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-3 py-1 text-sm">
@@ -35,7 +35,7 @@ export default function RegisterPage() {
               <li>✓ 월간·주간·일간 플래너 지원</li>
             </ul>
           </div>
-          <p className="text-indigo-300 text-xs">© 2026 Planner 001</p>
+          <p className="text-indigo-300 text-xs">© 2026 FortuneTab</p>
         </div>
 
         {/* 우측 폼 영역 */}
@@ -44,7 +44,7 @@ export default function RegisterPage() {
             {/* 모바일 로고 */}
             <div className="md:hidden flex items-center justify-center gap-2 text-indigo-600 font-bold text-xl mb-8">
               <BookOpen size={22} />
-              Planner 001
+              FortuneTab
             </div>
 
             <div className="text-center mb-8">

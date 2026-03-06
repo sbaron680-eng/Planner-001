@@ -18,7 +18,7 @@ export default function ProfilePage() {
 
   return (
     <>
-      <SEOHead title="내 프로파일 | Planner 001" description="사주·별자리·PDF 개인 설정" />
+      <SEOHead title="내 프로파일 | 포춘탭" description="사주·별자리·PDF 개인 설정" />
 
       {/* 헤더 */}
       <div className="bg-gradient-to-br from-indigo-600 to-violet-700 text-white py-10">

@@ -31,7 +31,7 @@ export default function HomePage() {
   return (
     <>
       <SEOHead
-        title="아이패드·갤럭시 탭 사주·운세 PDF 플래너 | Planner 001"
+        title="아이패드·갤럭시 탭 사주·운세 PDF 플래너 | 포춘탭(FortuneTab)"
         description="AI 사주·별자리 운세가 포함된 맞춤 PDF 플래너. 아이패드·갤럭시 탭 최적화. 한국 공휴일 자동 표시, PDF 하이퍼링크 내비게이션. 무료 플래너 5종 제공."
         keywords="PDF 플래너, 아이패드 플래너, 갤럭시 탭 플래너, 사주 플래너, 운세 플래너, 굿노트 플래너, 2025 플래너"
         jsonLd={[websiteJsonLD, faqJsonLD]}

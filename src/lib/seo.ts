@@ -14,7 +14,7 @@ export interface PageMeta {
 }
 
 const SITE = {
-  name: 'Planner 001',
+  name: '포춘탭(FortuneTab)',
   url: 'https://planner-001.pages.dev',
   description: '아이패드·갤럭시 탭 최적화 PDF 플래너. 사주·별자리 운세 포함 맞춤 플래너 생성. 무료·유료 다양한 템플릿 제공.',
   image: '/og-image.png',

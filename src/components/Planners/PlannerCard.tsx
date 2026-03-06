@@ -97,7 +97,7 @@ export default function PlannerCard({ planner }: Props) {
         {/* 호버 오버레이 */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
           <span className="text-white text-xs font-semibold flex items-center gap-1">
-            자세히 보기 <ArrowRight size={12} />
+            상세 보기 <ArrowRight size={12} />
           </span>
         </div>
 
@@ -152,7 +152,7 @@ export default function PlannerCard({ planner }: Props) {
             }`}
           >
             {isFree ? <Download size={14} /> : <Star size={14} />}
-            {isFree ? '다운로드' : '보기'}
+            {isFree ? '무료 다운로드' : '상세 보기'}
           </Link>
         </div>
       </div>

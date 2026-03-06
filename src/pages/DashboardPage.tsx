@@ -47,7 +47,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <SEOHead title="대시보드 | Planner 001" description="나의 플래너 대시보드" />
+      <SEOHead title="대시보드 | 포춘탭" description="나의 플래너 대시보드" />
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
 

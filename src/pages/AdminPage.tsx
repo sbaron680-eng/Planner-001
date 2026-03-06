@@ -46,7 +46,7 @@ export default function AdminPage() {
 
   return (
     <>
-      <SEOHead title="관리자 | Planner 001" description="관리자 대시보드" />
+      <SEOHead title="관리자 | 포춘탭" description="관리자 대시보드" />
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-8">관리자 대시보드</h1>

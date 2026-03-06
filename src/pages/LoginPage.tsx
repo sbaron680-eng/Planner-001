@@ -11,15 +11,15 @@ export default function LoginPage() {
   return (
     <>
       <SEOHead
-        title="로그인 | Planner 001"
-        description="Planner 001에 로그인하고 나만의 플래너를 관리하세요."
+        title="로그인 | FortuneTab"
+        description="포춘탭에 로그인하고 나만의 플래너를 관리하세요."
       />
       <div className="min-h-screen flex">
         {/* 좌측 브랜드 패널 (md 이상) */}
         <div className="hidden md:flex flex-col justify-between w-1/2 bg-gradient-to-br from-indigo-600 to-violet-700 p-12 text-white">
           <div className="flex items-center gap-2 font-bold text-xl">
             <BookOpen size={24} />
-            Planner 001
+            FortuneTab
           </div>
           <div className="space-y-4">
             <div className="inline-flex items-center gap-2 bg-white/10 rounded-full px-3 py-1 text-sm">
@@ -33,7 +33,7 @@ export default function LoginPage() {
               AI가 생년월일을 분석해 나만의 맞춤 운세·플래너 PDF를 생성합니다.
             </p>
           </div>
-          <p className="text-indigo-300 text-xs">© 2026 Planner 001</p>
+          <p className="text-indigo-300 text-xs">© 2026 FortuneTab</p>
         </div>
 
         {/* 우측 폼 영역 */}
@@ -42,7 +42,7 @@ export default function LoginPage() {
             {/* 모바일 로고 */}
             <div className="md:hidden flex items-center justify-center gap-2 text-indigo-600 font-bold text-xl mb-8">
               <BookOpen size={22} />
-              Planner 001
+              FortuneTab
             </div>
 
             <div className="text-center mb-8">

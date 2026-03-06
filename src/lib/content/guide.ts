@@ -17,7 +17,7 @@ export const guidePosts: Post[] = [
       { type: 'heading', level: 2, text: '1. 회원가입' },
       {
         type: 'paragraph',
-        text: '우측 상단의 "무료 시작" 버튼을 클릭하고, 이메일 또는 소셜 계정(구글·카카오·네이버)으로 가입합니다.',
+        text: '우측 상단의 "무료 플래너 받기" 버튼을 클릭하고, 이메일 또는 소셜 계정(구글·카카오·네이버)으로 가입합니다.',
       },
       { type: 'heading', level: 2, text: '2. 플래너 선택' },
       {

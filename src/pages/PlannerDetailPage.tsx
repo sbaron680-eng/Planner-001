@@ -63,7 +63,7 @@ export default function PlannerDetailPage() {
   return (
     <>
       <SEOHead
-        title={`${planner.title} | Planner 001`}
+        title={`${planner.title} | 포춘탭`}
         description={planner.description}
         keywords={`${planner.title}, PDF 플래너, 아이패드 플래너`}
         breadcrumbs={[

@@ -26,7 +26,7 @@ export default function PremiumPlannersPage() {
   return (
     <>
       <SEOHead
-        title="프리미엄 PDF 플래너 | 사주·운세 포함 맞춤 플래너 | Planner 001"
+        title="프리미엄 PDF 플래너 | 사주·운세 포함 맞춤 플래너 | 포춘탭"
         description="AI 사주·별자리·커플 운세 포함 프리미엄 맞춤 PDF 플래너. 아이패드·갤럭시 탭 최적화. PDF 하이퍼링크 내비게이션."
         keywords="프리미엄 PDF 플래너, 사주 플래너, 별자리 플래너, 커플 플래너, 비즈니스 플래너"
         breadcrumbs={[{ name: '홈', url: '/' }, { name: '프리미엄 플래너', url: '/planners/premium' }]}
@@ -35,7 +35,7 @@ export default function PremiumPlannersPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-10">
             <span className="inline-block bg-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-1 rounded-full mb-3">프리미엄</span>
-            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">프리미엄 PDF 플래너</h1>
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">프리미엄 운세·사주 플래너</h1>
             <p className="text-gray-500 text-lg">AI 맞춤 운세·사주 분석 포함. 총 {PREMIUM_PLANNERS.length}종</p>
           </div>
 
