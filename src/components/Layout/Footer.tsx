@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { BookOpen, Mail, Instagram, ArrowRight } from 'lucide-react';
+import { Sparkles, Mail, Instagram, ArrowRight } from 'lucide-react';
 
 const LINKS = {
   planner: [
@@ -14,11 +14,16 @@ const LINKS = {
     { label: '커플 궁합', to: '/fortune?tab=couple' },
     { label: '오늘의 운세', to: '/fortune?tab=daily' },
   ],
+  content: [
+    { label: '블로그', to: '/blog' },
+    { label: '이용 가이드', to: '/guide' },
+    { label: '자주 묻는 질문', to: '/faq' },
+    { label: '문의하기', to: '/contact' },
+  ],
   support: [
-    { label: '자주 묻는 질문', to: '/faq', href: '' },
     { label: '개인정보처리방침', to: '/privacy', href: '' },
     { label: '이용약관', to: '/terms', href: '' },
-    { label: '문의하기', to: '', href: 'mailto:hello@planner001.com' },
+    { label: '문의 이메일', to: '', href: 'mailto:hello@fortunetab.com' },
   ],
 };
 
@@ -49,28 +54,28 @@ export default function Footer() {
 
       {/* ── 본문 ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-10 mb-12">
 
           {/* 브랜드 */}
           <div className="md:col-span-1">
             <Link to="/" className="flex items-center gap-2.5 mb-4 group">
               <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
-                <BookOpen size={15} className="text-white" />
+                <Sparkles size={15} className="text-white" />
               </div>
               <span className="font-bold text-white text-base">
-                Planner <span className="text-indigo-400">001</span>
+                Fortune<span className="text-indigo-400">Tab</span>
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-gray-500">
-              아이패드·갤럭시 탭 최적화<br />
-              사주·별자리 운세 포함 맞춤 PDF 플래너
+              포춘탭 — 사주·운세 기반<br />
+              맞춤 PDF 플래너 서비스
             </p>
             <div className="flex gap-3 mt-5">
-              <a href="mailto:hello@planner001.com"
+              <a href="mailto:hello@fortunetab.com"
                 className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
                 <Mail size={15} />
               </a>
-              <a href="https://instagram.com/planner001" target="_blank" rel="noopener noreferrer"
+              <a href="https://instagram.com/fortunetab" target="_blank" rel="noopener noreferrer"
                 className="w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center transition-colors">
                 <Instagram size={15} />
               </a>
@@ -101,6 +106,18 @@ export default function Footer() {
             </ul>
           </div>
 
+          {/* 콘텐츠 */}
+          <div>
+            <h4 className="text-white font-semibold mb-4 text-sm">콘텐츠</h4>
+            <ul className="space-y-2.5 text-sm">
+              {LINKS.content.map((l) => (
+                <li key={l.label}>
+                  <Link to={l.to} className="text-gray-500 hover:text-gray-200 transition-colors">{l.label}</Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+
           {/* 고객지원 */}
           <div>
             <h4 className="text-white font-semibold mb-4 text-sm">고객지원</h4>
@@ -120,7 +137,7 @@ export default function Footer() {
 
         {/* 하단 */}
         <div className="border-t border-white/5 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-600">
-          <p>© {year} Planner 001. All rights reserved.</p>
+          <p>© {year} FortuneTab (포춘탭). All rights reserved.</p>
           <p>Powered by Cloudflare Pages · Claude AI</p>
         </div>
       </div>

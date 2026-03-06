@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Menu, X, BookOpen, LogIn, User, Settings, LogOut, ChevronDown, Sparkles } from 'lucide-react';
+import { Menu, X, LogIn, User, Settings, LogOut, ChevronDown, Sparkles, BookOpen } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
 
 export default function Navbar() {
@@ -42,10 +42,10 @@ export default function Navbar() {
           {/* 로고 */}
           <Link to="/" className="flex items-center gap-2 group">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md group-hover:shadow-indigo-300 transition-shadow">
-              <BookOpen size={16} className="text-white" />
+              <Sparkles size={15} className="text-white" />
             </div>
             <span className="font-bold text-gray-900 text-base tracking-tight">
-              Planner <span className="text-indigo-600">001</span>
+              Fortune<span className="text-indigo-600">Tab</span>
             </span>
           </Link>
 
@@ -59,6 +59,7 @@ export default function Navbar() {
                 운세·사주
               </span>
             </NavLink>
+            <NavLink to="/blog" className={linkClass}>블로그</NavLink>
           </nav>
 
           {/* 우측 액션 */}
@@ -135,6 +136,7 @@ export default function Navbar() {
           <NavLink to="/fortune" className="flex items-center gap-1.5 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-amber-50 hover:text-amber-700 transition-colors" onClick={() => setMenuOpen(false)}>
             <Sparkles size={14} className="text-amber-500" /> 운세·사주
           </NavLink>
+          <NavLink to="/blog" className="block px-3 py-2.5 rounded-xl text-sm font-medium text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 transition-colors" onClick={() => setMenuOpen(false)}>블로그</NavLink>
           <div className="pt-2 pb-1 h-px bg-gray-100 mx-1" />
           {user ? (
             <>
