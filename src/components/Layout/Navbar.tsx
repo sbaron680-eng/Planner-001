@@ -111,7 +111,7 @@ export default function Navbar() {
                 </Link>
                 <Link to="/register"
                   className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white text-sm font-semibold px-4 py-2 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition-all shadow-md shadow-indigo-200 hover:shadow-indigo-300">
-                  무료 시작
+                  무료 플래너 받기
                 </Link>
               </>
             )}

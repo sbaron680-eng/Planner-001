@@ -15,7 +15,7 @@ export default function PlannerShowcase() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <span className="inline-block bg-green-100 text-green-700 text-xs font-semibold px-3 py-1 rounded-full mb-2">무료</span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">무료 플래너</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">무료 태블릿 플래너</h2>
               <p className="text-gray-500 mt-1">회원가입 없이 바로 다운로드 가능</p>
             </div>
             <Link
@@ -45,7 +45,7 @@ export default function PlannerShowcase() {
           <div className="flex items-center justify-between mb-8">
             <div>
               <span className="inline-block bg-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-1 rounded-full mb-2">프리미엄</span>
-              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">프리미엄 플래너</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold text-gray-900">프리미엄 운세·사주 플래너</h2>
               <p className="text-gray-500 mt-1">운세·사주 분석 포함, AI 맞춤 PDF 생성</p>
             </div>
             <Link

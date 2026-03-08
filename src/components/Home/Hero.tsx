@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom';
 import { Download, Star, Sparkles, ArrowRight, CheckCircle2 } from 'lucide-react';
 
 const STATS = [
-  { value: '10+', label: '디자인 템플릿' },
-  { value: '무료', label: '5종 제공' },
-  { value: 'A4', label: '태블릿 최적화' },
+  { value: '10+', label: '가지 디자인 템플릿' },
+  { value: '무료', label: '플래너 5종 즉시 제공' },
+  { value: 'A4', label: '기준 태블릿 최적화 레이아웃' },
 ];
 
 const DOW = ['일', '월', '화', '수', '목', '금', '토'];
@@ -36,19 +36,19 @@ export default function Hero() {
             {/* 뱃지 */}
             <div className="inline-flex items-center gap-2 bg-white/80 text-indigo-700 text-xs font-semibold px-4 py-2 rounded-full mb-7 border border-indigo-100 shadow-sm backdrop-blur-sm">
               <Sparkles size={13} className="text-amber-500" />
-              아이패드 · 갤럭시 탭 최적화 PDF 플래너
+              태블릿 전용 운세 플래너 · 포춘탭(FortuneTab)
               <span className="ml-1 bg-indigo-600 text-white text-[10px] px-2 py-0.5 rounded-full">NEW</span>
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-extrabold text-gray-900 leading-[1.15] tracking-tight mb-6">
-              나만의 특별한<br />
-              <span className="text-gradient">사주 · 운세 플래너</span><br />
-              를 만들어보세요
+              운세와 계획을 한 번에,<br />
+              <span className="text-gradient">아이패드·갤럭시 탭</span><br />
+              플래너
             </h1>
 
             <p className="text-base sm:text-lg text-gray-500 mb-8 leading-relaxed max-w-xl">
-              AI가 분석한 사주·별자리 운세와 함께, 아이패드와 갤럭시 탭에 최적화된 PDF 플래너를 즉시 생성하세요.
-              공휴일 자동 표시, PDF 내부 하이퍼링크 내비게이션까지 완벽 지원합니다.
+              AI가 분석한 사주·별자리·커플 운세를 바탕으로, 아이패드·갤럭시 탭에 최적화된 한국어 디지털 PDF 플래너를 즉시 생성합니다.
+              한국 공휴일 자동 표시와 하이퍼링크 내비게이션까지 한 번에 제공합니다.
             </p>
 
             {/* 특징 체크 리스트 */}
@@ -76,7 +76,7 @@ export default function Hero() {
                 className="inline-flex items-center justify-center gap-2 bg-white text-indigo-600 font-semibold px-7 py-3.5 rounded-2xl border-2 border-indigo-100 hover:border-indigo-300 hover:bg-indigo-50 transition-all shadow-sm"
               >
                 <Star size={17} />
-                프리미엄 플래너 보기
+                프리미엄 운세 플래너 보기
               </Link>
             </div>
 
