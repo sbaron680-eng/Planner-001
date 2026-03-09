@@ -93,4 +93,55 @@ export function buildBreadcrumbJsonLD(items: { name: string; url: string }[]) {
   };
 }
 
+export function buildOrganizationJsonLD() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: SITE.name,
+    url: SITE.url,
+    logo: `${SITE.url}/favicon.svg`,
+    description: SITE.description,
+    contactPoint: {
+      '@type': 'ContactPoint',
+      email: 'hello@fortunetab.com',
+      contactType: 'customer service',
+      availableLanguage: 'Korean',
+    },
+    sameAs: [],
+  };
+}
+
+export function buildArticleJsonLD(article: {
+  title: string;
+  description: string;
+  publishedAt: string;
+  updatedAt?: string;
+  author?: string;
+  image?: string;
+  slug: string;
+}) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: article.title,
+    description: article.description,
+    image: article.image || SITE.image,
+    datePublished: article.publishedAt,
+    dateModified: article.updatedAt || article.publishedAt,
+    author: {
+      '@type': 'Person',
+      name: article.author || SITE.name,
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: SITE.name,
+      logo: { '@type': 'ImageObject', url: `${SITE.url}/favicon.svg` },
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `${SITE.url}/blog/${article.slug}`,
+    },
+  };
+}
+
 export { SITE };

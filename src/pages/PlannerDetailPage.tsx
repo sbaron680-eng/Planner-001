@@ -7,6 +7,7 @@ import SajuForm from '@/components/Fortune/SajuForm';
 import AstrologyForm from '@/components/Fortune/AstrologyForm';
 import FortuneDisplay from '@/components/Fortune/FortuneDisplay';
 import { getPlannerBySlug } from '@/data/planners';
+import { buildProductJsonLD } from '@/lib/seo';
 import { useAuthStore } from '@/store/useAuthStore';
 import type { FortuneResult } from '@/types';
 
@@ -51,6 +52,15 @@ export default function PlannerDetailPage() {
   const planner = getPlannerBySlug(slug ?? '');
   if (!planner) return <Navigate to="/404" replace />;
 
+  const productJsonLD = buildProductJsonLD({
+    id: planner.id,
+    title: planner.title,
+    description: planner.description,
+    price: planner.price,
+    thumbnail: planner.thumbnail,
+    slug: planner.slug,
+  });
+
   const needsFortune = planner.is_fortune;
   const isSaju = planner.category === 'saju' || planner.category === 'couple';
   const isAstrology = planner.category === 'astrology';
@@ -65,7 +75,8 @@ export default function PlannerDetailPage() {
       <SEOHead
         title={`${planner.title} | Planner 001`}
         description={planner.description}
-        keywords={`${planner.title}, PDF 플래너, 아이패드 플래너`}
+        keywords={`${planner.title}, PDF 플래너, 아이패드 플래너, 갤럭시 탭 플래너`}
+        jsonLd={[productJsonLD]}
         breadcrumbs={[
           { name: '홈', url: '/' },
           { name: planner.type === 'free' ? '무료 플래너' : '프리미엄 플래너', url: `/planners/${planner.type}` },

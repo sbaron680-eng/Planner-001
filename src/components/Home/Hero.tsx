@@ -41,9 +41,9 @@ export default function Hero() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl lg:text-5xl xl:text-6xl font-extrabold text-gray-900 leading-[1.15] tracking-tight mb-6">
-              운세와 계획을 한 번에,<br />
-              <span className="text-gradient">아이패드·갤럭시 탭</span><br />
-              플래너
+              아이패드 · 갤럭시 탭<br />
+              <span className="text-gradient">사주 · 운세 맞춤</span><br />
+              PDF 플래너
             </h1>
 
             <p className="text-base sm:text-lg text-gray-500 mb-8 leading-relaxed max-w-xl">
