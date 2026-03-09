@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://planner001.pages.dev/sitemap.xml
+Sitemap: https://planner-001.pages.dev/sitemap.xml

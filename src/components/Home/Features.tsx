@@ -68,7 +68,7 @@ export default function Features() {
             Features
           </span>
           <h2 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">
-            Planner 001만의 특별한 기능
+            포춘탭만의 특별한 기능
           </h2>
           <p className="text-lg text-gray-500 max-w-2xl mx-auto">
             단순한 플래너를 넘어, 나만의 운세와 계획이 담긴 특별한 한 해를 만들어보세요.

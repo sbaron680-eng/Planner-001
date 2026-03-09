@@ -67,8 +67,8 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-gray-500">
-              포춘탭 — 사주·운세 기반<br />
-              맞춤 PDF 플래너 서비스
+              포춘탭(FortuneTab) — 사주·운세 기반<br />
+              태블릿 전용 PDF 플래너 서비스
             </p>
             <div className="flex gap-3 mt-5">
               <a href="mailto:hello@fortunetab.com"

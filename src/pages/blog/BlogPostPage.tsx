@@ -3,6 +3,7 @@ import { ArrowLeft, Clock, Calendar, Tag } from 'lucide-react';
 import SEOHead from '@/components/Layout/SEOHead';
 import PostBody from '@/components/Content/PostBody';
 import { getBlogPost } from '@/lib/content/blog';
+import { buildArticleJsonLD } from '@/lib/seo';
 import NotFoundPage from '../NotFoundPage';
 
 export default function BlogPostPage() {
@@ -15,6 +16,16 @@ export default function BlogPostPage() {
     new Date(post.publishedAt)
   );
 
+  const articleJsonLD = buildArticleJsonLD({
+    title: post.title,
+    description: post.description,
+    publishedAt: post.publishedAt,
+    updatedAt: post.updatedAt,
+    author: post.author,
+    image: post.thumbnail,
+    slug: post.slug,
+  });
+
   return (
     <>
       <SEOHead
@@ -23,6 +34,7 @@ export default function BlogPostPage() {
         path={`/blog/${post.slug}`}
         type="article"
         image={post.thumbnail}
+        jsonLd={[articleJsonLD]}
       />
 
       <article className="max-w-3xl mx-auto">
